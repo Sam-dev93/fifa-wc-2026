@@ -182,12 +182,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 <header>
   <div class="h-brand">FIFA <span>WORLD CUP 2026</span></div>
   <div class="h-sub">CANADA · MEXICO · USA</div>
-  <div class="h-pills">
-    <span class="h-pill"><b>48</b> Teams</span>
-    <span class="h-pill"><b>104</b> Matches</span>
-    <span class="h-pill"><b>16</b> Venues</span>
-    <span class="h-pill"><b>Jun 11 – Jul 19</b></span>
-  </div>
+  <div style="font-size:9px;color:var(--w3);margin-top:6px;letter-spacing:.5px"><b>48</b> Teams · <b>104</b> Matches · <b>16</b> Venues · <b>Jun 11 – Jul 19</b></div>
 </header>
 <nav id="nav"></nav>
 <div id="pages"></div>
@@ -425,7 +420,27 @@ function mc(m){
     btns='<div class="mc-btn" data-sheet="'+s1+'"><div class="lb">\ud83d\udc65 '+m.h+'<span class="mf">'+hp+'</span><span class="ct">'+hT.length+'</span></div><div class="ar">\u203A</div></div>';
     btns+='<div class="mc-btn" data-sheet="'+s2+'"><div class="lb">\ud83d\udc65 '+m.a+'<span class="mf">'+ap+'</span><span class="ct">'+aT2.length+'</span></div><div class="ar">\u203A</div></div>';
   }
-  return '<div class="mc"><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm">'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div><div class="sub">'+m.et+' \u00b7 '+m.g+'</div></div><div class="mc-tm away"><span class="nm">'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
+  // Live score rendering
+  var sc=liveData.scores?liveData.scores[m.m]:null;
+  var scoreHtml="",midExtra="",cardStyle="";
+  if(sc&&sc.status==="FINISHED"){
+    var sT=sc.hs+" - "+sc.as;
+    if(sc.hsp!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">('+sc.hsp+'-'+sc.asp+' pen)</small>';
+    else if(sc.hse!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">(aet)</small>';
+    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--w);margin:4px 0">'+sT+'</div>';
+    midExtra='FT \u00b7 '+m.g;
+    cardStyle='border-left:3px solid var(--w3)';
+  } else if(sc&&sc.status==="IN_PLAY"){
+    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;animation:pulse 1.5s infinite">'+sc.hs+" - "+sc.as+'</div>';
+    midExtra='\ud83d\udfe2 LIVE '+(sc.minute?sc.minute+"'":"")+' \u00b7 '+m.g;
+    cardStyle='border-left:3px solid var(--green)';
+  } else if(sc&&sc.status==="PAUSED"){
+    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0">'+sc.hs+" - "+sc.as+'</div>';
+    midExtra='\u23f8\ufe0f HT \u00b7 '+m.g;
+    cardStyle='border-left:3px solid var(--orange)';
+  }
+  var subText=midExtra||m.et+' \u00b7 '+m.g;
+  return '<div class="mc"'+(cardStyle?' style="'+cardStyle+'"':'')+'><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm">'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div>'+scoreHtml+'<div class="sub">'+subText+'</div></div><div class="mc-tm away"><span class="nm">'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
 }
 
 // ════════════════════════════════════════════
@@ -446,10 +461,12 @@ document.querySelectorAll(".tab").forEach(function(t){
     t.classList.add("a");
     document.querySelectorAll(".pg").forEach(function(x){x.classList.remove("a");});
     document.getElementById("p-"+t.dataset.p).classList.add("a");
+    activeTab=t.dataset.p;
     ({overview:rO,groups:rG,matches:function(){rM("ALL");},knockout:rK,venues:rV,tracker:rTr})[t.dataset.p]();
     window.scrollTo(0,0);
   });
 });
+var activeTab="overview";
 
 // ════════════════════════════════════════════
 // OVERVIEW - Clean, spacious
@@ -662,18 +679,73 @@ function rK(){
 // ════════════════════════════════════════════
 // VENUES
 // ════════════════════════════════════════════
+var selVenue=null;
 function rV(){
+  if(selVenue!==null){rVD(selVenue);return;}
   var h='<div class="stats"><div class="stat"><div class="v">11</div><div class="l">USA</div></div><div class="stat"><div class="v">3</div><div class="l">Mexico</div></div><div class="stat"><div class="v">2</div><div class="l">Canada</div></div></div><div class="g2">';
   for(var i=0;i<VN.length;i++){
     var v=VN[i];
-    h+='<div class="ven"><div class="vn">'+v.f+'</div><div class="va">'+v.r+' \u00b7 '+v.c+'</div>';
+    h+='<div class="ven" data-vi="'+i+'" style="cursor:pointer"><div class="vn">'+v.f+'<span style="float:right;font-size:12px;color:var(--w4)">\u203A</span></div><div class="va">'+v.r+' \u00b7 '+v.c+'</div>';
     h+='<div class="vg"><div><span class="l">COUNTRY</span><div class="v">'+v.co+'</div></div><div><span class="l">CAPACITY</span><div class="v">'+v.cap+'</div></div><div><span class="l">MATCHES</span><div class="v">'+v.m+'</div></div><div><span class="l">KNOCKOUT</span><div class="v">'+(v.ko.length?v.ko.join(", "):"Groups only")+'</div></div></div>';
     if(v.ko.indexOf("FINAL")!==-1)h+='<span class="vb vb-f">\ud83c\udfc6 FINAL</span>';
     if(v.ko.indexOf("SF")!==-1)h+='<span class="vb vb-s">SEMI-FINAL</span>';
     if(v.ko.indexOf("QF")!==-1)h+='<span class="vb vb-q">QF</span>';
     h+='<div style="margin-top:8px;font-size:11px;color:var(--w3)">'+v.note+'</div></div>';
   }
-  document.getElementById("p-venues").innerHTML=h+'</div>';
+  h+='</div>';
+  document.getElementById("p-venues").innerHTML=h;
+  document.querySelectorAll("[data-vi]").forEach(function(el){
+    el.addEventListener("click",function(){selVenue=parseInt(el.dataset.vi);rV();window.scrollTo(0,0);});
+  });
+}
+
+function rVD(vi){
+  var v=VN[vi];
+  var city=v.c;
+  // Get ALL matches at this venue/city
+  var vm=S.filter(function(m){return m.c===city;});
+  // Separate into group stage and knockout
+  var gs=vm.filter(function(m){return !m.ko;});
+  var ko=vm.filter(function(m){return m.ko;});
+  // Sort by date
+  gs.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
+  ko.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
+
+  var h='<button class="cd-back" id="venBack">\u2190 All Venues</button>';
+  h+='<div style="text-align:center;padding:16px 20px 8px">';
+  h+='<div style="font-size:28px;margin-bottom:8px">\ud83c\udfdf\ufe0f</div>';
+  h+='<div style="font-size:20px;font-weight:800;color:var(--w)">'+v.f+'</div>';
+  h+='<div style="font-size:13px;color:var(--w2);margin-top:4px">'+v.r+'</div>';
+  h+='<div style="display:flex;justify-content:center;gap:16px;margin-top:12px">';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--acc)">'+v.m+'</div><div style="font-size:9px;color:var(--w3);text-transform:uppercase;letter-spacing:1px">Matches</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--w)">'+v.cap+'</div><div style="font-size:9px;color:var(--w3);text-transform:uppercase;letter-spacing:1px">Capacity</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--blue)">'+v.co+'</div><div style="font-size:9px;color:var(--w3);text-transform:uppercase;letter-spacing:1px">Country</div></div>';
+  h+='</div>';
+  // Badges
+  var badges="";
+  if(v.ko.indexOf("FINAL")!==-1)badges+='<span class="vb vb-f" style="margin:4px 2px">\ud83c\udfc6 FINAL</span>';
+  if(v.ko.indexOf("SF")!==-1)badges+='<span class="vb vb-s" style="margin:4px 2px">SEMI-FINAL</span>';
+  if(v.ko.indexOf("QF")!==-1)badges+='<span class="vb vb-q" style="margin:4px 2px">QF</span>';
+  if(v.ko.indexOf("R16")!==-1)badges+='<span style="display:inline-block;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(79,156,247,.08);color:var(--blue);margin:4px 2px">ROUND OF 16</span>';
+  if(v.ko.indexOf("R32")!==-1)badges+='<span style="display:inline-block;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(168,181,204,.08);color:var(--w2);margin:4px 2px">ROUND OF 32</span>';
+  if(v.ko.indexOf("3rd")!==-1)badges+='<span style="display:inline-block;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(245,166,35,.08);color:var(--orange);margin:4px 2px">3RD PLACE</span>';
+  if(badges)h+='<div style="margin-top:12px">'+badges+'</div>';
+  h+='<div style="font-size:11px;color:var(--w3);margin-top:8px">'+v.note+'</div>';
+  h+='</div>';
+
+  // Group stage matches
+  if(gs.length){
+    h+='<div class="st">Group Stage <span style="font-size:10px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--w4);margin-left:4px">'+gs.length+' matches</span></div>';
+    for(var i=0;i<gs.length;i++)h+=mc(gs[i]);
+  }
+  // Knockout matches
+  if(ko.length){
+    h+='<div class="st">Knockout Stage <span style="font-size:10px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--w4);margin-left:4px">'+ko.length+' matches</span></div>';
+    for(var i=0;i<ko.length;i++)h+=mc(ko[i]);
+  }
+
+  document.getElementById("p-venues").innerHTML=h;
+  document.getElementById("venBack").addEventListener("click",function(){selVenue=null;rV();window.scrollTo(0,0);});
 }
 
 // ════════════════════════════════════════════
@@ -824,6 +896,7 @@ function fetchLive(manual){
     localStorage.setItem("wc26_lastFetch",""+lastFetch);
     localStorage.setItem("wc26_live",JSON.stringify(liveData));
     applyLiveData();
+    if(window._updateLiveBtn)window._updateLiveBtn();
     if(document.getElementById("apiStatus"))
       document.getElementById("apiStatus").innerHTML='<span style="color:var(--green)">✅ Connected! '+data.resultSet.count+' matches loaded</span>';
     scheduleLivePoll();
@@ -947,19 +1020,15 @@ function processStandings(data){
 
 // ── Apply live data to match cards ──
 function applyLiveData(){
-  if(!liveData.scores)return;
-
-  // Update confirmed playoff teams in the data
+  // Update confirmed playoff teams in the underlying data arrays
   if(liveData.confirmedTeams){
     var ct=liveData.confirmedTeams;
     for(var po in ct){
       var newTeam=ct[po];
-      // Update in match data
       S.forEach(function(m){
         if(m.h===po)m.h=newTeam;
         if(m.a===po)m.a=newTeam;
       });
-      // Update in group data  
       G.forEach(function(g){
         for(var j=0;j<g.t.length;j++){
           if(typeof g.t[j]!=="string"&&g.t[j].po===po){
@@ -967,15 +1036,13 @@ function applyLiveData(){
           }
         }
       });
-      // Add flag if missing
       if(!F[newTeam])F[newTeam]="\ud83c\udff3\ufe0f";
     }
   }
 
-  // Update knockout teams from winners
+  // Update knockout teams from winners/losers
   S.forEach(function(m){
     if(m.ko){
-      var wKey="W"+m.h.replace("W","");
       if(m.h.match(/^W\d+/)&&liveData[m.h]){m.h=liveData[m.h];}
       if(m.a.match(/^W\d+/)&&liveData[m.a]){m.a=liveData[m.a];}
       if(m.h.match(/^L\d+/)&&liveData[m.h]){m.h=liveData[m.h];}
@@ -983,50 +1050,9 @@ function applyLiveData(){
     }
   });
 
-  // Update displayed match cards with scores
-  document.querySelectorAll(".mc").forEach(function(card){
-    var mnEl=card.querySelector(".mn");
-    if(!mnEl)return;
-    var mnText=mnEl.textContent.trim();
-    var mnum=parseInt(mnText.replace("M",""));
-    if(!mnum||!liveData.scores[mnum])return;
-    var sc=liveData.scores[mnum];
-
-    // Find or create score element
-    var midEl=card.querySelector(".mc-mid");
-    if(!midEl)return;
-
-    var scoreEl=midEl.querySelector(".live-score");
-    if(!scoreEl){
-      scoreEl=document.createElement("div");
-      scoreEl.className="live-score";
-      midEl.insertBefore(scoreEl,midEl.querySelector(".sub"));
-    }
-
-    if(sc.status==="FINISHED"){
-      var sText=sc.hs+" - "+sc.as;
-      if(sc.hsp!==null)sText+=' <small>('+sc.hsp+'-'+sc.asp+' pen)</small>';
-      else if(sc.hse!==null)sText+=' <small>(aet)</small>';
-      scoreEl.innerHTML=sText;
-      scoreEl.style.cssText="font-size:22px;font-weight:800;color:var(--w);margin:4px 0";
-      card.style.borderLeft="3px solid var(--w3)";
-      // Update sub text
-      var subEl=midEl.querySelector(".sub");
-      if(subEl)subEl.innerHTML='FT · '+sc.et+' · '+sc.g;
-    } else if(sc.status==="IN_PLAY"){
-      scoreEl.innerHTML=sc.hs+" - "+sc.as;
-      scoreEl.style.cssText="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;animation:pulse 1.5s infinite";
-      card.style.borderLeft="3px solid var(--green)";
-      var subEl2=midEl.querySelector(".sub");
-      if(subEl2)subEl2.innerHTML='🟢 LIVE '+(sc.minute?sc.minute+"'":"")+" · "+S.find(function(x){return x.m===mnum;}).g;
-    } else if(sc.status==="PAUSED"){
-      scoreEl.innerHTML=sc.hs+" - "+sc.as;
-      scoreEl.style.cssText="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0";
-      card.style.borderLeft="3px solid var(--orange)";
-      var subEl3=midEl.querySelector(".sub");
-      if(subEl3)subEl3.innerHTML='⏸️ HT · '+S.find(function(x){return x.m===mnum;}).g;
-    }
-  });
+  // Re-render the active tab so all names + scores refresh everywhere
+  var rerender={overview:rO,groups:rG,matches:function(){rM("ALL");},knockout:rK,venues:rV,tracker:rTr};
+  if(activeTab&&rerender[activeTab])rerender[activeTab]();
 }
 
 // ── Smart polling ──
@@ -1054,9 +1080,15 @@ function scheduleLivePoll(){
   if(hdr){
     var lBtn=document.createElement("div");
     lBtn.id="liveBtn";
-    lBtn.style.cssText="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;cursor:pointer";
-    lBtn.innerHTML='<span style="font-size:11px;color:var(--w3)">⚙️ Live Data</span>';
-    if(API_KEY)lBtn.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:'+(liveData.live>0?'var(--green)':'var(--w3)')+';display:inline-block"></span><span style="font-size:11px;color:var(--w3)">'+(liveData.live>0?liveData.live+' LIVE':'Connected')+'</span><span style="font-size:11px;color:var(--w4)">⚙️</span>';
+    lBtn.style.cssText="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;cursor:pointer";
+    var updateLiveBtn=window._updateLiveBtn=function(){
+      var dot='<span style="width:6px;height:6px;border-radius:50%;background:'+(liveData.live>0?'var(--green)':'var(--w3)')+';display:inline-block"></span>';
+      var status=liveData.live>0?liveData.live+' LIVE':'Connected';
+      var time=lastFetch?new Date(lastFetch).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'--:--';
+      lBtn.innerHTML=dot+'<span style="font-size:10px;color:var(--w3)">'+status+'</span><span style="font-size:9px;color:var(--w4)">· Updated '+time+'</span>';
+    }
+    if(API_KEY)updateLiveBtn();
+    else lBtn.innerHTML='<span style="font-size:10px;color:var(--w4)">No API key</span>';
     lBtn.addEventListener("click",showAPISettings);
     hdr.appendChild(lBtn);
   }
