@@ -1,4 +1,4 @@
-const CACHE = 'wc2026-v6';
+const CACHE = 'wc2026-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  // NEVER cache API/proxy requests - let them go straight to network
+  if (url.hostname.includes('workers.dev') || url.hostname.includes('football-data.org')) {
+    return;
+  }
+
   if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '') {
     e.respondWith(
       fetch(e.request).then(r => {
