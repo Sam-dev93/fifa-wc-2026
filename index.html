@@ -733,7 +733,24 @@ function rDt(e,team){
   document.getElementById("backBtn").addEventListener("click",function(){sel=null;rTr();window.scrollTo(0,0);});
 }
 
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").then(function(reg){
+    // Check for updates every 30 minutes
+    setInterval(function(){reg.update();},1800000);
+    reg.addEventListener("updatefound",function(){
+      var nw=reg.installing;
+      nw.addEventListener("statechange",function(){
+        if(nw.state==="installed"&&navigator.serviceWorker.controller){
+          // New version available - show update banner
+          var ban=document.createElement("div");
+          ban.style.cssText="position:fixed;bottom:80px;left:16px;right:16px;background:var(--card2);border:1px solid var(--acc);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+          ban.innerHTML='<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--w)">Update Available</div><div style="font-size:11px;color:var(--w3);margin-top:2px">Tap to refresh with latest data</div></div><button style="padding:8px 16px;border-radius:8px;border:none;background:var(--accG);color:#000;font-weight:700;font-size:12px;cursor:pointer" onclick="window.location.reload()">Update</button>';
+          document.body.appendChild(ban);
+        }
+      });
+    });
+  });
+}
 
 // ════════════════════════════════════════════
 // LIVE API - football-data.org integration
