@@ -911,6 +911,15 @@ function fetchLive(manual){
       headers:{"X-Auth-Token":API_KEY}
     });
   }).then(function(r){
+    if(r.status===429){
+      // Rate limited - just keep existing data, try again next cycle
+      lastFetch=Date.now();
+      localStorage.setItem("wc26_lastFetch",""+lastFetch);
+      if(window._updateLiveBtn)window._updateLiveBtn();
+      if(document.getElementById("apiStatus"))
+        document.getElementById("apiStatus").innerHTML='<span style="color:var(--orange)">⏳ Rate limited - will retry in 60s</span>';
+      return Promise.reject("skip");
+    }
     if(!r.ok)throw new Error("Matches: "+r.status);
     return r.json();
   }).then(function(data){
@@ -922,8 +931,9 @@ function fetchLive(manual){
       document.getElementById("apiStatus").innerHTML='<span style="color:var(--green)">✅ Connected! '+data.resultSet.count+' matches loaded</span>';
     scheduleLivePoll();
   }).catch(function(e){
+    if(e==="skip")return;
     console.log("API error:",e);
-    liveData._lastError=e.message;
+    liveData._lastError=e.message||e;
     if(window._updateLiveBtn)window._updateLiveBtn();
     if(document.getElementById("apiStatus"))
       document.getElementById("apiStatus").innerHTML='<span style="color:var(--red)">❌ '+e.message+'</span>';
