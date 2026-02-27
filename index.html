@@ -22,14 +22,14 @@
   --sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:'Noto Sans',-apple-system,sans-serif;background:var(--bg);color:var(--w);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5;padding-top:env(safe-area-inset-top,0px)}
+body{font-family:'Noto Sans',-apple-system,sans-serif;background:var(--bg);color:var(--w);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5}
 ::-webkit-scrollbar{width:0;display:none}
 input,button{font-family:inherit}
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .live-score small{font-size:11px;font-weight:500;color:var(--w3)}
 
-header{padding:max(var(--sat),16px) 20px 16px;text-align:center;padding-top:calc(max(var(--sat),16px) + 12px)}
+header{padding:calc(env(safe-area-inset-top,0px) + 8px) 20px 12px;text-align:center}
 .h-brand{font-size:22px;font-weight:900;letter-spacing:4px;color:var(--w)}
 .h-brand span{background:var(--accG);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .h-sub{font-size:10px;color:var(--w3);letter-spacing:6px;margin-top:4px;font-weight:700}
