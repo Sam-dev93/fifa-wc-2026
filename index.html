@@ -30,9 +30,9 @@ input,button{font-family:inherit}
 .live-score small{font-size:11px;font-weight:500;color:var(--w3)}
 
 header{padding:max(var(--sat),16px) 20px 16px;text-align:center}
-.h-brand{font-size:17px;font-weight:900;letter-spacing:3px;color:var(--w)}
+.h-brand{font-size:22px;font-weight:900;letter-spacing:4px;color:var(--w)}
 .h-brand span{background:var(--accG);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.h-sub{font-size:8px;color:var(--w3);letter-spacing:5px;margin-top:3px;font-weight:700}
+.h-sub{font-size:10px;color:var(--w3);letter-spacing:6px;margin-top:4px;font-weight:700}
 
 nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);margin:0 16px;border-radius:14px;padding:4px;position:sticky;top:10px;z-index:50;gap:3px;box-shadow:0 4px 24px rgba(0,0,0,.3)}
 .tab{flex:1;padding:10px 2px;font-size:9.5px;font-weight:700;color:var(--w4);background:none;border:none;border-radius:11px;cursor:pointer;text-align:center;letter-spacing:.5px;white-space:nowrap;transition:.2s}
@@ -182,7 +182,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 <header>
   <div class="h-brand">FIFA <span>WORLD CUP 2026</span></div>
   <div class="h-sub">CANADA · MEXICO · USA</div>
-  <div style="font-size:9px;color:var(--w3);margin-top:6px;letter-spacing:.5px"><b>48</b> Teams · <b>104</b> Matches · <b>16</b> Venues · <b>Jun 11 – Jul 19</b></div>
+  <div style="font-size:11px;color:var(--w3);margin-top:6px;letter-spacing:.5px"><b>48</b> Teams · <b>104</b> Matches · <b>16</b> Venues · <b>Jun 11 – Jul 19</b></div>
 </header>
 <nav id="nav"></nav>
 <div id="pages"></div>
@@ -1082,10 +1082,23 @@ function scheduleLivePoll(){
     lBtn.id="liveBtn";
     lBtn.style.cssText="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;cursor:pointer";
     var updateLiveBtn=window._updateLiveBtn=function(){
-      var dot='<span style="width:6px;height:6px;border-radius:50%;background:'+(liveData.live>0?'var(--green)':'var(--w3)')+';display:inline-block"></span>';
-      var status=liveData.live>0?liveData.live+' LIVE':'Connected';
-      var time=lastFetch?new Date(lastFetch).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'--:--';
-      lBtn.innerHTML=dot+'<span style="font-size:10px;color:var(--w3)">'+status+'</span><span style="font-size:9px;color:var(--w4)">· Updated '+time+'</span>';
+      var dot,status,timeStr;
+      if(liveData.live>0){
+        dot='<span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.5s infinite"></span>';
+        status=liveData.live+' LIVE';
+      } else {
+        dot='<span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>';
+        status='Connected';
+      }
+      if(lastFetch){
+        var ago=Math.round((Date.now()-lastFetch)/60000);
+        if(ago<1)timeStr='just now';
+        else if(ago<60)timeStr=ago+'m ago';
+        else timeStr=new Date(lastFetch).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      } else {
+        timeStr='awaiting sync';
+      }
+      lBtn.innerHTML=dot+'<span style="font-size:10px;color:var(--w2)">'+status+'</span><span style="font-size:9px;color:var(--w4)">\u00b7 '+timeStr+'</span>';
     }
     if(API_KEY)updateLiveBtn();
     else lBtn.innerHTML='<span style="font-size:10px;color:var(--w4)">No API key</span>';
