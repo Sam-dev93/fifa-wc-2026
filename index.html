@@ -29,7 +29,7 @@ input,button{font-family:inherit}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .live-score small{font-size:11px;font-weight:500;color:var(--w3)}
 
-header{padding:calc(env(safe-area-inset-top,0px) + 8px) 20px 12px;text-align:center}
+header{padding:calc(env(safe-area-inset-top,0px) + 8px) 20px 12px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:100;background:var(--bg);border-bottom:1px solid rgba(255,255,255,.04)}
 .h-brand{font-size:22px;font-weight:900;letter-spacing:4px;color:var(--w)}
 .h-brand span{background:var(--accG);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .h-sub{font-size:10px;color:var(--w3);letter-spacing:6px;margin-top:4px;font-weight:700}
@@ -184,6 +184,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
   <div class="h-sub">CANADA · MEXICO · USA</div>
   <div style="font-size:11px;color:var(--w3);margin-top:6px;letter-spacing:.5px"><b>48</b> Teams · <b>104</b> Matches · <b>16</b> Venues · <b>Jun 11 – Jul 19</b></div>
 </header>
+<div id="hSpacer"></div>
 <nav id="nav"></nav>
 <div id="pages"></div>
 <div class="overlay" id="overlay"></div>
@@ -454,6 +455,16 @@ var nh="";for(var i=0;i<tabs.length;i++){nh+='<button class="tab'+(i===0?" a":""
 navEl.innerHTML=nh;
 var ph="";for(var i=0;i<tabIds.length;i++){ph+='<div id="p-'+tabIds[i]+'" class="pg'+(i===0?" a":"")+'"></div>';}
 pagesEl.innerHTML=ph;
+
+// Set spacer height to match fixed header
+setTimeout(function(){
+  var hdr=document.querySelector("header");
+  if(hdr)document.getElementById("hSpacer").style.height=hdr.offsetHeight+"px";
+},50);
+window.addEventListener("resize",function(){
+  var hdr=document.querySelector("header");
+  if(hdr)document.getElementById("hSpacer").style.height=hdr.offsetHeight+"px";
+});
 
 document.querySelectorAll(".tab").forEach(function(t){
   t.addEventListener("click",function(){
