@@ -215,21 +215,21 @@ var G=[
 
 var VN=[
 {f:"Mexico City",r:"Estadio Azteca",c:"Mexico City",co:"Mexico",cap:"83,000",m:5,ko:["R32","R16"],note:"3rd WC hosted here (1970, 1986)"},
-{f:"Guadalajara",r:"Estadio Akron",c:"Guadalajara",co:"Mexico",cap:"46,000",m:4,ko:["R32"],note:"Home of Chivas"},
-{f:"Monterrey",r:"Estadio BBVA",c:"Monterrey",co:"Mexico",cap:"53,000",m:4,ko:["R32"],note:"Modern venue, opened 2015"},
-{f:"Toronto",r:"BMO Field",c:"Toronto",co:"Canada",cap:"45,000",m:6,ko:[],note:"Smallest venue"},
+{f:"Guadalajara",r:"Estadio Akron",c:"Guadalajara",co:"Mexico",cap:"46,000",m:3,ko:[],note:"Home of Chivas"},
+{f:"Monterrey",r:"Estadio BBVA",c:"Monterrey",co:"Mexico",cap:"53,000",m:5,ko:["R32"],note:"Modern venue, opened 2015"},
+{f:"Toronto",r:"BMO Field",c:"Toronto",co:"Canada",cap:"45,000",m:6,ko:["R32"],note:"Smallest venue"},
 {f:"Vancouver",r:"BC Place",c:"Vancouver",co:"Canada",cap:"54,000",m:7,ko:["R32","R16"],note:"Retractable roof"},
 {f:"New York/NJ",r:"MetLife Stadium",c:"East Rutherford",co:"USA",cap:"82,500",m:8,ko:["R32","R16","FINAL"],note:"FINAL on July 19"},
-{f:"Boston",r:"Gillette Stadium",c:"Foxborough",co:"USA",cap:"65,000",m:7,ko:["R32","QF"],note:"Under renovation"},
-{f:"Philadelphia",r:"Lincoln Financial Field",c:"Philadelphia",co:"USA",cap:"69,000",m:7,ko:["R32","R16"],note:"Home of Eagles"},
+{f:"Boston",r:"Gillette Stadium",c:"Foxborough",co:"USA",cap:"65,000",m:6,ko:["R32","QF"],note:"Under renovation"},
+{f:"Philadelphia",r:"Lincoln Financial Field",c:"Philadelphia",co:"USA",cap:"69,000",m:6,ko:["R16"],note:"Home of Eagles"},
 {f:"Miami",r:"Hard Rock Stadium",c:"Miami",co:"USA",cap:"65,000",m:7,ko:["R32","QF","3rd"],note:"F1 Miami GP venue"},
-{f:"Atlanta",r:"Mercedes-Benz Stadium",c:"Atlanta",co:"USA",cap:"75,000",m:8,ko:["R32","R16","SF"],note:"Camera-lens roof"},
-{f:"Dallas",r:"AT&T Stadium",c:"Arlington",co:"USA",cap:"94,000",m:9,ko:["R32","R16","SF"],note:"Largest venue, most matches"},
-{f:"Houston",r:"NRG Stadium",c:"Houston",co:"USA",cap:"72,000",m:7,ko:["R32","R16"],note:"Retractable roof"},
+{f:"Atlanta",r:"Mercedes-Benz Stadium",c:"Atlanta",co:"USA",cap:"75,000",m:7,ko:["R32","R16","SF"],note:"Camera-lens roof"},
+{f:"Dallas",r:"AT&T Stadium",c:"Arlington",co:"USA",cap:"94,000",m:11,ko:["R32","R16","SF"],note:"Largest venue, most matches"},
+{f:"Houston",r:"NRG Stadium",c:"Houston",co:"USA",cap:"72,000",m:8,ko:["R32","R16"],note:"Retractable roof"},
 {f:"Kansas City",r:"Arrowhead Stadium",c:"Kansas City",co:"USA",cap:"76,000",m:6,ko:["R32","QF"],note:"World loudest stadium"},
-{f:"Los Angeles",r:"SoFi Stadium",c:"Los Angeles",co:"USA",cap:"70,000",m:8,ko:["R32","QF"],note:"LA 2028 Olympics"},
-{f:"San Francisco",r:"Levi's Stadium",c:"Santa Clara",co:"USA",cap:"68,500",m:7,ko:["R32"],note:"Super Bowl LX host"},
-{f:"Seattle",r:"Lumen Field",c:"Seattle",co:"USA",cap:"69,000",m:6,ko:["R32","R16"],note:"Downtown skyline views"}];
+{f:"Los Angeles",r:"SoFi Stadium",c:"Los Angeles",co:"USA",cap:"70,000",m:9,ko:["R32","QF"],note:"LA 2028 Olympics"},
+{f:"San Francisco",r:"Levi's Stadium",c:"Santa Clara",co:"USA",cap:"68,500",m:5,ko:["R32"],note:"Super Bowl LX host"},
+{f:"Seattle",r:"Lumen Field",c:"Seattle",co:"USA",cap:"69,000",m:5,ko:["R32","R16"],note:"Downtown skyline views"}];
 
 var S=[
 {m:1,d:"2026-06-11",et:"3:00 PM",g:"A",h:"Mexico",a:"South Africa",v:"Mexico City Stadium",c:"Mexico City"},
@@ -423,25 +423,35 @@ function mc(m){
   }
   // Live score rendering
   var sc=liveData.scores?liveData.scores[m.m]:null;
-  var scoreHtml="",midExtra="",cardStyle="";
+  var scoreHtml="",midExtra="",cardStyle="",cardClass="mc",hWin="",aWin="";
+  var today=new Date().toISOString().split("T")[0];
+  var isToday=m.d===today;
+
   if(sc&&sc.status==="FINISHED"){
     var sT=sc.hs+" - "+sc.as;
     if(sc.hsp!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">('+sc.hsp+'-'+sc.asp+' pen)</small>';
     else if(sc.hse!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">(aet)</small>';
     scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--w);margin:4px 0">'+sT+'</div>';
     midExtra='FT \u00b7 '+m.g;
-    cardStyle='border-left:3px solid var(--w3)';
+    cardStyle='border-left:3px solid var(--w3);opacity:.6';
+    // Highlight winner
+    if(sc.winner==="HOME_TEAM")hWin=' style="color:var(--acc);font-weight:800"';
+    else if(sc.winner==="AWAY_TEAM")aWin=' style="color:var(--acc);font-weight:800"';
   } else if(sc&&sc.status==="IN_PLAY"){
     scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;animation:pulse 1.5s infinite">'+sc.hs+" - "+sc.as+'</div>';
     midExtra='\ud83d\udfe2 LIVE '+(sc.minute?sc.minute+"'":"")+' \u00b7 '+m.g;
-    cardStyle='border-left:3px solid var(--green)';
+    cardStyle='border-left:3px solid var(--green);box-shadow:0 0 20px rgba(69,212,131,.15)';
   } else if(sc&&sc.status==="PAUSED"){
     scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0">'+sc.hs+" - "+sc.as+'</div>';
     midExtra='\u23f8\ufe0f HT \u00b7 '+m.g;
-    cardStyle='border-left:3px solid var(--orange)';
+    cardStyle='border-left:3px solid var(--orange);box-shadow:0 0 20px rgba(255,159,10,.12)';
+  } else if(isToday){
+    // Today's upcoming match
+    cardStyle='border-left:3px solid var(--acc)';
+    midExtra='\ud83d\udfe1 TODAY '+m.et+' \u00b7 '+m.g;
   }
   var subText=midExtra||m.et+' \u00b7 '+m.g;
-  return '<div class="mc"'+(cardStyle?' style="'+cardStyle+'"':'')+'><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm">'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div>'+scoreHtml+'<div class="sub">'+subText+'</div></div><div class="mc-tm away"><span class="nm">'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
+  return '<div class="'+cardClass+'"'+(cardStyle?' style="'+cardStyle+'"':'')+'><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm"'+hWin+'>'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div>'+scoreHtml+'<div class="sub">'+subText+'</div></div><div class="mc-tm away"><span class="nm"'+aWin+'>'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
 }
 
 // ════════════════════════════════════════════
@@ -548,12 +558,31 @@ function rM(fg){
   var byD={};ms.forEach(function(m){if(!byD[m.d])byD[m.d]=[];byD[m.d].push(m);});
   var gs=["ALL","A","B","C","D","E","F","G","H","I","J","K","L","R32","R16","QF","SF","FINAL"];
   var fh='<div class="fr">';for(var i=0;i<gs.length;i++){fh+='<button class="fp'+((fg||"ALL")===gs[i]?" a":"")+'" data-fg="'+gs[i]+'">'+(gs[i]==="ALL"?"All":gs[i])+'</button>';}fh+='</div>';
+
+  // Live & Today section
+  var today=new Date().toISOString().split("T")[0];
+  var liveNow=ms.filter(function(m){var sc=liveData.scores?liveData.scores[m.m]:null;return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
+  var todayMs=ms.filter(function(m){return m.d===today;});
+  var topSection="";
+  if(liveNow.length>0){
+    topSection+='<div class="st" style="color:var(--green)">\ud83d\udfe2 LIVE NOW</div>';
+    for(var i=0;i<liveNow.length;i++)topSection+=mc(liveNow[i]);
+  }
+  if(todayMs.length>0&&(fg==="ALL"||!fg)){
+    var todayUpcoming=todayMs.filter(function(m){var sc=liveData.scores?liveData.scores[m.m]:null;return !sc||sc.status==="SCHEDULED"||sc.status==="TIMED";});
+    if(todayUpcoming.length>0){
+      topSection+='<div class="st">\ud83d\udfe1 TODAY</div>';
+      for(var i=0;i<todayUpcoming.length;i++)topSection+=mc(todayUpcoming[i]);
+    }
+  }
+  if(topSection)topSection+='<div style="height:1px;background:var(--w4);opacity:.15;margin:20px 0"></div>';
+
   var mh="";var days=Object.keys(byD);
   for(var i=0;i<days.length;i++){
     mh+='<div class="dh">'+fD(days[i])+'</div>';
     for(var j=0;j<byD[days[i]].length;j++){mh+=mc(byD[days[i]][j]);}
   }
-  document.getElementById("p-matches").innerHTML=fh+mh;
+  document.getElementById("p-matches").innerHTML=fh+topSection+mh;
   document.querySelectorAll("[data-fg]").forEach(function(b){
     b.addEventListener("click",function(){rM(b.dataset.fg);});
   });
@@ -992,7 +1021,7 @@ function processMatches(data){
         hs:m.score.fullTime.home, as:m.score.fullTime.away,
         hsh:m.score.halfTime.home, ash:m.score.halfTime.away,
         status:m.status, minute:m.minute||null,
-        // penalties/extra time
+        winner:m.score.winner||null,
         hse:m.score.extraTime?m.score.extraTime.home:null,
         ase:m.score.extraTime?m.score.extraTime.away:null,
         hsp:m.score.penalties?m.score.penalties.home:null,
