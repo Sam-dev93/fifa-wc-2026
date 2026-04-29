@@ -494,27 +494,13 @@ var activeTab="overview";
 // OVERVIEW - Clean, spacious
 // ════════════════════════════════════════════
 function rO(){
-  var PO=[
-    {n:"UEFA Playoff A \u2192 Group B",t:["Italy","Northern Ireland","Wales","Bosnia & Herzegovina"]},
-    {n:"UEFA Playoff B \u2192 Group F",t:["Albania","Poland","Sweden","Ukraine"]},
-    {n:"UEFA Playoff C \u2192 Group D",t:["Kosovo","Romania","Slovakia","Turkey"]},
-    {n:"UEFA Playoff D \u2192 Group A",t:["Denmark","Czech Republic","North Macedonia","Republic of Ireland"]},
-    {n:"Intercontinental 1 \u2192 Group K",t:["DR Congo","Jamaica","New Caledonia"]},
-    {n:"Intercontinental 2 \u2192 Group I",t:["Bolivia","Iraq","Suriname"]}
-  ];
-  var poh="";for(var i=0;i<PO.length;i++){
-    var sid=regSheet(PO[i].n,PO[i].t);
-    var fg="";for(var j=0;j<PO[i].t.length;j++)fg+=fl(PO[i].t[j]);
-    poh+='<div class="po" data-sheet="'+sid+'"><div class="po-top"><span class="nm">'+PO[i].n+'</span><span class="ar">'+PO[i].t.length+' teams \u203A</span></div><div class="flags">'+fg+'</div></div>';
-  }
   var KD=[["JUN 11","Group Stage Begins"],["JUN 27","Group Stage Ends"],["JUN 28\u2013JUL 3","Round of 32"],["JUL 4\u20137","Round of 16"],["JUL 9\u201311","Quarter-Finals"],["JUL 14\u201315","Semi-Finals"],["JUL 18","3rd Place \u2014 Miami"],["JUL 19","\ud83c\udfc6 FINAL \u2014 New York/NJ"]];
   var kdh="";for(var i=0;i<KD.length;i++){kdh+='<div class="tl-row"><span class="d">'+KD[i][0]+'</span><span class="t">'+KD[i][1]+'</span></div>';}
 
   document.getElementById("p-overview").innerHTML=
     '<div class="stats"><div class="stat"><div class="v">48</div><div class="l">Teams</div></div><div class="stat"><div class="v">104</div><div class="l">Matches</div></div><div class="stat"><div class="v">16</div><div class="l">Venues</div></div></div>'+
     '<div class="hero"><b>The first ever 48-team World Cup.</b> 12 groups of 4. Top 2 + 8 best 3rd-placed teams advance to the <span class="cy">Round of 32</span>.<br><br><span class="g">France</span> (left bracket) and <span class=\"g\">Argentina</span> (right bracket) are separated \u2014 they cannot meet before the semi-finals.<br><br>\ud83c\udfc6 <b>Final:</b> MetLife Stadium, NY/NJ \u2014 <span class="g">Jul 19, 3:00 PM ET</span></div>'+
-    '<div class="st">Schedule</div><div class="tl">'+kdh+'</div>'+
-    '<div class="st">Remaining Playoffs</div>'+poh;
+    '<div class="st">Schedule</div><div class="tl">'+kdh+'</div>';
 }
 rO();
 
