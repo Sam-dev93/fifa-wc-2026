@@ -216,7 +216,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 // ── DATA VERSION / CACHE-BUST ──────────────────────────────
 // Bumping this string wipes stale cached data (old fixtures/teams) from
 // localStorage AND the service-worker caches on the next load.
-var DATA_VERSION="2026-finaldraw-v10";
+var DATA_VERSION="2026-finaldraw-v11";
 try{
   if(localStorage.getItem("wc26_dataVersion")!==DATA_VERSION){
     localStorage.removeItem("wc26_live");
@@ -927,7 +927,7 @@ function rDt(e,team){
   function rs(l,ms){
     if(!ms.length)return "";
     var h='<div class="st">'+l+' <span style="font-size:10px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--w4)">'+ms.length+' possible</span></div>';
-    for(var i=0;i<ms.length;i++)h+=mc(ms[i]);
+    for(var i=0;i<ms.length;i++){h+=(typeof oppMap!=="undefined"&&oppMap[ms[i].m]!==undefined)?mcC(ms[i],team,oppMap[ms[i].m]):mc(ms[i]);}
     return h;
   }
 
@@ -943,6 +943,8 @@ function rDt(e,team){
   for(var i=0;i<gms.length;i++)h+=mc(gms[i]);
   var reach = selPos==="all" ? null : koReach(team, selPos);
   function flt(arr){ return reach ? arr.filter(function(m){return reach.has(m.m);}) : arr; }
+  var oppMap={};
+  if(selPos!=="all"){ posPaths(team,selPos).forEach(function(path){ path.forEach(function(mn,i){ var mm=S.find(function(x){return x.m===mn;}); if(!mm)return; var side; if(i===0){ side = selPos==="3" ? (/^3rd/.test(mm.h)?"h":"a") : (mm.h===(selPos+gn)?"h":"a"); } else { side = mm.h===("W"+path[i-1])?"h":"a"; } oppMap[mn]= side==="h"?mm.a:mm.h; }); }); }
   var notes={
     all:"Every match "+team+" could appear in \u2014 across all finishing positions.",
     "1":"If "+team+" <b>win Group "+gn+"</b> \u2014 their route as group winner.",
@@ -1411,6 +1413,29 @@ function koReach(team,pos){var gr=fG(team);if(!gr)return new Set();var g=gr.n;va
   else if(pos==="3"){starts=r32ThirdMatches(g);}
   var set=new Set();starts.forEach(function(s){fwdPath(s).forEach(function(m){set.add(m);});});
   if(set.size)set.add(103);return set;}
+
+
+/* ---- country-explorer opponent card ---- */
+function posPaths(team,pos){var gr=fG(team);if(!gr)return [];var g=gr.n;var starts=[];
+  if(pos==="1"){var w=r32WinnerMatch(g);if(w)starts=[w];}
+  else if(pos==="2"){var r=r32RunnerMatch(g);if(r)starts=[r];}
+  else if(pos==="3"){starts=r32ThirdMatches(g);}
+  return starts.map(function(s){return fwdPath(s);});}
+function labelSlot(c){
+  var m1=c.match(/^([12])([A-L])$/); if(m1)return (m1[1]==="1"?"Winner Grp ":"Runner-up Grp ")+m1[2];
+  var m2=c.match(/^3rd\(([A-L]+)\)$/); if(m2)return "Best 3rd ("+m2[1].split("").join("/")+")";
+  var m3=c.match(/^W(\d+)$/); if(m3)return "Winner M"+m3[1];
+  var m4=c.match(/^L(\d+)$/); if(m4)return "Loser M"+m4[1];
+  return c;}
+function mcC(m,team,oppCode){
+  var oppTeams=sdT(oppCode);
+  var prev="";for(var i=0;i<Math.min(6,oppTeams.length);i++)prev+=fl(oppTeams[i]);
+  var sid=regSheet("Possible opponents \u2014 "+labelSlot(oppCode),oppTeams);
+  var sub=(m.et||"")+" \u00b7 "+(m.g.length===1?"Group "+m.g:m.g);
+  var teamCell='<div class="mc-tm"><span class="fl">'+fl(team)+'</span><span class="nm" style="color:var(--acc);font-weight:800">'+team+'</span></div>';
+  var oppCell='<div class="mc-tm away"><span class="nm" style="font-style:italic;color:var(--w2)">'+labelSlot(oppCode)+'</span><span class="fl">\ud83c\udff3\ufe0f</span></div>';
+  var btn='<div class="mc-btn" data-sheet="'+sid+'"><div class="lb">\ud83d\udc65 Possible opponents<span class="mf">'+prev+'</span><span class="ct">'+oppTeams.length+'</span></div><div class="ar">\u203A</div></div>';
+  return '<div class="mc"><div class="mc-body">'+teamCell+'<div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div></div>'+oppCell+'</div><div class="mc-info"><span class="mc-sub">'+sub+'</span><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btn+'</div>';}
 
 </script>
 </body>
