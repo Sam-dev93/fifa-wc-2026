@@ -94,15 +94,16 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 /* Match card */
 .mc{background:var(--card);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
 .mc:active{transform:scale(.985);transition:.1s}
-.mc-body{display:flex;align-items:center;padding:16px 20px;gap:4px}
-.mc-tm{flex:1;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;min-width:0}
+.mc-body{display:flex;align-items:center;padding:16px 14px;gap:8px}
+.mc-tm{flex:1;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;min-width:0}
 .mc-tm.away{flex-direction:row-reverse}
-.mc-tm .fl{font-size:28px;flex-shrink:0}
-.mc-tm .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mc-mid{text-align:center;flex-shrink:0;min-width:64px}
+.mc-tm .fl{font-size:24px;flex-shrink:0}
+.mc-tm .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mc-mid{text-align:center;flex-shrink:0;min-width:52px;max-width:62px}
 .mc-mid .mn{font-size:20px;font-weight:900;letter-spacing:1px}
 .mc-mid .sub{font-size:9.5px;font-weight:600;color:var(--w3);margin-top:1px}
-.mc-info{display:flex;gap:10px;padding:0 20px 12px;font-size:11px;color:var(--w3)}
+.mc-info{display:flex;flex-wrap:wrap;justify-content:center;text-align:center;gap:6px 12px;padding:0 16px 12px;font-size:11px;color:var(--w3)}
+.mc-info .mc-sub{width:100%;text-align:center;color:var(--w2);font-weight:700;font-size:11.5px}
 .mc-btn{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--sep);cursor:pointer;transition:.15s}
 .mc-btn:active{background:rgba(212,169,75,.03)}
 .mc-btn .lb{font-size:12px;color:var(--acc);font-weight:600;display:flex;align-items:center;gap:5px}
@@ -193,7 +194,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 // ── DATA VERSION / CACHE-BUST ──────────────────────────────
 // Bumping this string wipes stale cached data (old fixtures/teams) from
 // localStorage AND the service-worker caches on the next load.
-var DATA_VERSION="2026-finaldraw-v6";
+var DATA_VERSION="2026-finaldraw-v8";
 try{
   if(localStorage.getItem("wc26_dataVersion")!==DATA_VERSION){
     localStorage.removeItem("wc26_live");
@@ -470,7 +471,7 @@ function mc(m){
     midExtra='\ud83d\udfe1 TODAY '+m.et+' \u00b7 '+gLabel(m.g);
   }
   var subText=midExtra||m.et+' \u00b7 '+gLabel(m.g);
-  return '<div class="'+cardClass+'"'+(cardStyle?' style="'+cardStyle+'"':'')+'><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm"'+hWin+'>'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div>'+scoreHtml+'<div class="sub">'+subText+'</div></div><div class="mc-tm away"><span class="nm"'+aWin+'>'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
+  return '<div class="'+cardClass+'"'+(cardStyle?' style="'+cardStyle+'"':'')+'><div class="mc-body"><div class="mc-tm"><span class="fl">'+hf+'</span><span class="nm"'+hWin+'>'+m.h+'</span></div><div class="mc-mid"><div class="mn" style="color:'+tc(m.g)+'">M'+m.m+'</div>'+scoreHtml+'</div><div class="mc-tm away"><span class="nm"'+aWin+'>'+m.a+'</span><span class="fl">'+af+'</span></div></div><div class="mc-info"><span class="mc-sub">'+subText+'</span><span>\ud83c\udfdf\ufe0f '+m.v+'</span><span>\ud83d\udccd '+m.c+'</span></div>'+btns+'</div>';
 }
 
 // ════════════════════════════════════════════
