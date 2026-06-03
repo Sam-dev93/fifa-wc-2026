@@ -190,6 +190,20 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 <div class="overlay" id="overlay"></div>
 <div class="sheet" id="sheet"><div class="s-bar"></div><div class="s-head"><h3 id="sTitle"></h3><span class="cnt" id="sCnt"></span></div><div class="s-body" id="sBody"></div></div>
 <script>
+// ── DATA VERSION / CACHE-BUST ──────────────────────────────
+// Bumping this string wipes stale cached data (old fixtures/teams) from
+// localStorage AND the service-worker caches on the next load.
+var DATA_VERSION="2026-finaldraw-v6";
+try{
+  if(localStorage.getItem("wc26_dataVersion")!==DATA_VERSION){
+    localStorage.removeItem("wc26_live");
+    localStorage.removeItem("wc26_lastFetch");
+    localStorage.setItem("wc26_dataVersion",DATA_VERSION);
+    if(typeof caches!=="undefined"&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}
+    if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.update&&r.update();});});}
+  }
+}catch(e){}
+
 
 
 // ════════════════════════════════════════════
@@ -213,6 +227,10 @@ var G=[
 {n:"K",r:"Central",t:["Portugal","DR Congo","Uzbekistan","Colombia"]},
 {n:"L",r:"Eastern",t:["England","Croatia","Ghana","Panama"]}];
 
+// Frozen list of the 48 actual participants — rejects any stray team the
+// live feed might try to inject (guards against wrong teams appearing).
+var VALID_TEAMS=(function(){var o={};G.forEach(function(g){g.t.forEach(function(t){if(typeof t==="string")o[t]=1;});});return o;})();
+
 var VN=[
 {f:"Mexico City",r:"Estadio Azteca",c:"Mexico City",co:"Mexico",cap:"83,000",m:5,ko:["R32","R16"],note:"3rd WC hosted here (1970, 1986)"},
 {f:"Guadalajara",r:"Estadio Akron",c:"Guadalajara",co:"Mexico",cap:"46,000",m:4,ko:[],note:"Home of Chivas"},
@@ -232,110 +250,110 @@ var VN=[
 {f:"Seattle",r:"Lumen Field",c:"Seattle",co:"USA",cap:"69,000",m:6,ko:["R32","R16"],note:"Downtown skyline views"}];
 
 var S=[
-{m:1,d:"2026-06-11",et:"3:00 PM",g:"A",h:"Mexico",a:"South Africa",v:"Mexico City Stadium",c:"Mexico City"},
-{m:2,d:"2026-06-11",et:"10:00 PM",g:"A",h:"South Korea",a:"Czechia",v:"Guadalajara Stadium",c:"Guadalajara"},
-{m:3,d:"2026-06-12",et:"3:00 PM",g:"B",h:"Canada",a:"Bosnia & Herzegovina",v:"Toronto Stadium",c:"Toronto"},
-{m:4,d:"2026-06-12",et:"9:00 PM",g:"D",h:"USA",a:"Paraguay",v:"Los Angeles Stadium",c:"Los Angeles"},
-{m:5,d:"2026-06-13",et:"9:00 PM",g:"C",h:"Haiti",a:"Scotland",v:"Boston Stadium",c:"Foxborough"},
-{m:6,d:"2026-06-13",et:"12:00 AM",g:"D",h:"Australia",a:"Türkiye",v:"Vancouver Stadium",c:"Vancouver"},
-{m:7,d:"2026-06-13",et:"6:00 PM",g:"C",h:"Brazil",a:"Morocco",v:"New York New Jersey Stadium",c:"East Rutherford"},
-{m:8,d:"2026-06-13",et:"3:00 PM",g:"B",h:"Qatar",a:"Switzerland",v:"San Francisco Stadium",c:"Santa Clara"},
-{m:9,d:"2026-06-14",et:"7:00 PM",g:"E",h:"Ivory Coast",a:"Ecuador",v:"Philadelphia Stadium",c:"Philadelphia"},
-{m:10,d:"2026-06-14",et:"1:00 PM",g:"E",h:"Germany",a:"Curaçao",v:"Houston Stadium",c:"Houston"},
-{m:11,d:"2026-06-14",et:"4:00 PM",g:"F",h:"Netherlands",a:"Japan",v:"Dallas Stadium",c:"Arlington"},
-{m:12,d:"2026-06-14",et:"10:00 PM",g:"F",h:"Sweden",a:"Tunisia",v:"Monterrey Stadium",c:"Monterrey"},
-{m:13,d:"2026-06-15",et:"6:00 PM",g:"H",h:"Saudi Arabia",a:"Uruguay",v:"Miami Stadium",c:"Miami"},
-{m:14,d:"2026-06-15",et:"12:00 PM",g:"H",h:"Spain",a:"Cape Verde",v:"Atlanta Stadium",c:"Atlanta"},
-{m:15,d:"2026-06-15",et:"9:00 PM",g:"G",h:"Iran",a:"New Zealand",v:"Los Angeles Stadium",c:"Los Angeles"},
-{m:16,d:"2026-06-15",et:"3:00 PM",g:"G",h:"Belgium",a:"Egypt",v:"Seattle Stadium",c:"Seattle"},
-{m:17,d:"2026-06-16",et:"3:00 PM",g:"I",h:"France",a:"Senegal",v:"New York New Jersey Stadium",c:"East Rutherford"},
-{m:18,d:"2026-06-16",et:"6:00 PM",g:"I",h:"Iraq",a:"Norway",v:"Boston Stadium",c:"Foxborough"},
-{m:19,d:"2026-06-16",et:"9:00 PM",g:"J",h:"Argentina",a:"Algeria",v:"Kansas City Stadium",c:"Kansas City"},
-{m:20,d:"2026-06-16",et:"12:00 AM",g:"J",h:"Austria",a:"Jordan",v:"San Francisco Stadium",c:"Santa Clara"},
-{m:21,d:"2026-06-17",et:"7:00 PM",g:"L",h:"Ghana",a:"Panama",v:"Toronto Stadium",c:"Toronto"},
-{m:22,d:"2026-06-17",et:"4:00 PM",g:"L",h:"England",a:"Croatia",v:"Dallas Stadium",c:"Arlington"},
-{m:23,d:"2026-06-17",et:"1:00 PM",g:"K",h:"Portugal",a:"DR Congo",v:"Houston Stadium",c:"Houston"},
-{m:24,d:"2026-06-17",et:"10:00 PM",g:"K",h:"Uzbekistan",a:"Colombia",v:"Mexico City Stadium",c:"Mexico City"},
-{m:25,d:"2026-06-18",et:"12:00 PM",g:"A",h:"Czechia",a:"South Africa",v:"Atlanta Stadium",c:"Atlanta"},
-{m:26,d:"2026-06-18",et:"3:00 PM",g:"B",h:"Switzerland",a:"Bosnia & Herzegovina",v:"Los Angeles Stadium",c:"Los Angeles"},
-{m:27,d:"2026-06-18",et:"6:00 PM",g:"B",h:"Canada",a:"Qatar",v:"Vancouver Stadium",c:"Vancouver"},
-{m:28,d:"2026-06-18",et:"9:00 PM",g:"A",h:"Mexico",a:"South Korea",v:"Guadalajara Stadium",c:"Guadalajara"},
-{m:29,d:"2026-06-19",et:"9:00 PM",g:"C",h:"Scotland",a:"Morocco",v:"Boston Stadium",c:"Foxborough"},
-{m:30,d:"2026-06-19",et:"6:00 PM",g:"C",h:"Brazil",a:"Haiti",v:"Philadelphia Stadium",c:"Philadelphia"},
-{m:31,d:"2026-06-19",et:"12:00 AM",g:"D",h:"Türkiye",a:"Paraguay",v:"San Francisco Stadium",c:"Santa Clara"},
-{m:32,d:"2026-06-19",et:"3:00 PM",g:"D",h:"USA",a:"Australia",v:"Seattle Stadium",c:"Seattle"},
-{m:33,d:"2026-06-20",et:"4:00 PM",g:"E",h:"Germany",a:"Ivory Coast",v:"Toronto Stadium",c:"Toronto"},
-{m:34,d:"2026-06-20",et:"8:00 PM",g:"E",h:"Ecuador",a:"Curaçao",v:"Kansas City Stadium",c:"Kansas City"},
-{m:35,d:"2026-06-20",et:"1:00 PM",g:"F",h:"Netherlands",a:"Sweden",v:"Houston Stadium",c:"Houston"},
-{m:36,d:"2026-06-20",et:"12:00 AM",g:"F",h:"Tunisia",a:"Japan",v:"Monterrey Stadium",c:"Monterrey"},
-{m:37,d:"2026-06-21",et:"6:00 PM",g:"H",h:"Uruguay",a:"Cape Verde",v:"Miami Stadium",c:"Miami"},
-{m:38,d:"2026-06-21",et:"12:00 PM",g:"H",h:"Spain",a:"Saudi Arabia",v:"Atlanta Stadium",c:"Atlanta"},
-{m:39,d:"2026-06-21",et:"3:00 PM",g:"G",h:"Belgium",a:"Iran",v:"Los Angeles Stadium",c:"Los Angeles"},
-{m:40,d:"2026-06-21",et:"9:00 PM",g:"G",h:"New Zealand",a:"Egypt",v:"Vancouver Stadium",c:"Vancouver"},
-{m:41,d:"2026-06-22",et:"8:00 PM",g:"I",h:"Norway",a:"Senegal",v:"New York New Jersey Stadium",c:"East Rutherford"},
-{m:42,d:"2026-06-22",et:"5:00 PM",g:"I",h:"France",a:"Iraq",v:"Philadelphia Stadium",c:"Philadelphia"},
-{m:43,d:"2026-06-22",et:"1:00 PM",g:"J",h:"Argentina",a:"Austria",v:"Dallas Stadium",c:"Arlington"},
-{m:44,d:"2026-06-22",et:"11:00 PM",g:"J",h:"Jordan",a:"Algeria",v:"San Francisco Stadium",c:"Santa Clara"},
-{m:45,d:"2026-06-23",et:"4:00 PM",g:"L",h:"England",a:"Ghana",v:"Boston Stadium",c:"Foxborough"},
-{m:46,d:"2026-06-23",et:"7:00 PM",g:"L",h:"Panama",a:"Croatia",v:"Toronto Stadium",c:"Toronto"},
-{m:47,d:"2026-06-23",et:"1:00 PM",g:"K",h:"Portugal",a:"Uzbekistan",v:"Houston Stadium",c:"Houston"},
-{m:48,d:"2026-06-23",et:"10:00 PM",g:"K",h:"Colombia",a:"DR Congo",v:"Guadalajara Stadium",c:"Guadalajara"},
-{m:49,d:"2026-06-24",et:"6:00 PM",g:"C",h:"Scotland",a:"Brazil",v:"Miami Stadium",c:"Miami"},
-{m:50,d:"2026-06-24",et:"6:00 PM",g:"C",h:"Morocco",a:"Haiti",v:"Atlanta Stadium",c:"Atlanta"},
-{m:51,d:"2026-06-24",et:"3:00 PM",g:"B",h:"Switzerland",a:"Canada",v:"Vancouver Stadium",c:"Vancouver"},
-{m:52,d:"2026-06-24",et:"3:00 PM",g:"B",h:"Bosnia & Herzegovina",a:"Qatar",v:"Seattle Stadium",c:"Seattle"},
-{m:53,d:"2026-06-24",et:"9:00 PM",g:"A",h:"Czechia",a:"Mexico",v:"Mexico City Stadium",c:"Mexico City"},
-{m:54,d:"2026-06-24",et:"9:00 PM",g:"A",h:"South Africa",a:"South Korea",v:"Monterrey Stadium",c:"Monterrey"},
-{m:55,d:"2026-06-25",et:"4:00 PM",g:"E",h:"Curaçao",a:"Ivory Coast",v:"Philadelphia Stadium",c:"Philadelphia"},
-{m:56,d:"2026-06-25",et:"4:00 PM",g:"E",h:"Ecuador",a:"Germany",v:"NY/NJ Stadium",c:"East Rutherford"},
-{m:57,d:"2026-06-25",et:"7:00 PM",g:"F",h:"Japan",a:"Sweden",v:"Dallas Stadium",c:"Arlington"},
-{m:58,d:"2026-06-25",et:"7:00 PM",g:"F",h:"Tunisia",a:"Netherlands",v:"Kansas City Stadium",c:"Kansas City"},
-{m:59,d:"2026-06-25",et:"10:00 PM",g:"D",h:"Türkiye",a:"USA",v:"Los Angeles Stadium",c:"Los Angeles"},
-{m:60,d:"2026-06-25",et:"10:00 PM",g:"D",h:"Paraguay",a:"Australia",v:"San Francisco Stadium",c:"Santa Clara"},
-{m:61,d:"2026-06-26",et:"3:00 PM",g:"I",h:"Norway",a:"France",v:"Boston Stadium",c:"Foxborough"},
-{m:62,d:"2026-06-26",et:"3:00 PM",g:"I",h:"Senegal",a:"Iraq",v:"Toronto Stadium",c:"Toronto"},
-{m:63,d:"2026-06-26",et:"11:00 PM",g:"G",h:"Egypt",a:"Iran",v:"Seattle Stadium",c:"Seattle"},
-{m:64,d:"2026-06-26",et:"11:00 PM",g:"G",h:"New Zealand",a:"Belgium",v:"Vancouver Stadium",c:"Vancouver"},
-{m:65,d:"2026-06-26",et:"8:00 PM",g:"H",h:"Cape Verde",a:"Saudi Arabia",v:"Houston Stadium",c:"Houston"},
-{m:66,d:"2026-06-26",et:"8:00 PM",g:"H",h:"Uruguay",a:"Spain",v:"Guadalajara Stadium",c:"Guadalajara"},
-{m:67,d:"2026-06-27",et:"5:00 PM",g:"L",h:"Panama",a:"England",v:"New York New Jersey Stadium",c:"East Rutherford"},
-{m:68,d:"2026-06-27",et:"5:00 PM",g:"L",h:"Croatia",a:"Ghana",v:"Philadelphia Stadium",c:"Philadelphia"},
-{m:69,d:"2026-06-27",et:"10:00 PM",g:"J",h:"Algeria",a:"Austria",v:"Kansas City Stadium",c:"Kansas City"},
-{m:70,d:"2026-06-27",et:"10:00 PM",g:"J",h:"Jordan",a:"Argentina",v:"Dallas Stadium",c:"Arlington"},
-{m:71,d:"2026-06-27",et:"7:30 PM",g:"K",h:"Colombia",a:"Portugal",v:"Miami Stadium",c:"Miami"},
-{m:72,d:"2026-06-27",et:"7:30 PM",g:"K",h:"DR Congo",a:"Uzbekistan",v:"Atlanta Stadium",c:"Atlanta"},
-{m:73,d:"2026-06-28",et:"3:00 PM",g:"R32",h:"2A",a:"2B",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
-{m:74,d:"2026-06-29",et:"4:30 PM",g:"R32",h:"1E",a:"3rd(ABCDF)",v:"Boston Stadium",c:"Foxborough",ko:1},
-{m:75,d:"2026-06-29",et:"9:00 PM",g:"R32",h:"1F",a:"2C",v:"Monterrey Stadium",c:"Monterrey",ko:1},
-{m:76,d:"2026-06-29",et:"1:00 PM",g:"R32",h:"1C",a:"2F",v:"Houston Stadium",c:"Houston",ko:1},
-{m:77,d:"2026-06-30",et:"5:00 PM",g:"R32",h:"1I",a:"3rd(CDFGH)",v:"NY/NJ Stadium",c:"East Rutherford",ko:1},
-{m:78,d:"2026-06-30",et:"1:00 PM",g:"R32",h:"2E",a:"2I",v:"Dallas Stadium",c:"Arlington",ko:1},
-{m:79,d:"2026-06-30",et:"9:00 PM",g:"R32",h:"1A",a:"3rd(CEFHI)",v:"Mexico City Stadium",c:"Mexico City",ko:1},
-{m:80,d:"2026-07-01",et:"12:00 PM",g:"R32",h:"1L",a:"3rd(EHIJK)",v:"Atlanta Stadium",c:"Atlanta",ko:1},
-{m:81,d:"2026-07-01",et:"8:00 PM",g:"R32",h:"1D",a:"3rd(BEFIJ)",v:"San Francisco Stadium",c:"Santa Clara",ko:1},
-{m:82,d:"2026-07-01",et:"4:00 PM",g:"R32",h:"1G",a:"3rd(AEHIJ)",v:"Seattle Stadium",c:"Seattle",ko:1},
-{m:83,d:"2026-07-02",et:"7:00 PM",g:"R32",h:"2K",a:"2L",v:"Toronto Stadium",c:"Toronto",ko:1},
-{m:84,d:"2026-07-02",et:"3:00 PM",g:"R32",h:"1H",a:"2J",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
-{m:85,d:"2026-07-02",et:"11:00 PM",g:"R32",h:"1B",a:"3rd(EFGIJ)",v:"Vancouver Stadium",c:"Vancouver",ko:1},
-{m:86,d:"2026-07-03",et:"6:00 PM",g:"R32",h:"1J",a:"2H",v:"Miami Stadium",c:"Miami",ko:1},
-{m:87,d:"2026-07-03",et:"9:30 PM",g:"R32",h:"1K",a:"3rd(DEIJL)",v:"Kansas City Stadium",c:"Kansas City",ko:1},
-{m:88,d:"2026-07-03",et:"2:00 PM",g:"R32",h:"2D",a:"2G",v:"Dallas Stadium",c:"Arlington",ko:1},
-{m:89,d:"2026-07-04",et:"5:00 PM",g:"R16",h:"W74",a:"W77",v:"Philadelphia Stadium",c:"Philadelphia",ko:1},
-{m:90,d:"2026-07-04",et:"1:00 PM",g:"R16",h:"W73",a:"W75",v:"Houston Stadium",c:"Houston",ko:1},
-{m:91,d:"2026-07-05",et:"4:00 PM",g:"R16",h:"W76",a:"W78",v:"NY/NJ Stadium",c:"East Rutherford",ko:1},
-{m:92,d:"2026-07-05",et:"8:00 PM",g:"R16",h:"W79",a:"W80",v:"Mexico City Stadium",c:"Mexico City",ko:1},
-{m:93,d:"2026-07-06",et:"3:00 PM",g:"R16",h:"W83",a:"W84",v:"Dallas Stadium",c:"Arlington",ko:1},
-{m:94,d:"2026-07-06",et:"8:00 PM",g:"R16",h:"W81",a:"W82",v:"Seattle Stadium",c:"Seattle",ko:1},
-{m:95,d:"2026-07-07",et:"12:00 PM",g:"R16",h:"W86",a:"W88",v:"Atlanta Stadium",c:"Atlanta",ko:1},
-{m:96,d:"2026-07-07",et:"4:00 PM",g:"R16",h:"W85",a:"W87",v:"Vancouver Stadium",c:"Vancouver",ko:1},
-{m:97,d:"2026-07-09",et:"4:00 PM",g:"QF",h:"W89",a:"W90",v:"Boston Stadium",c:"Foxborough",ko:1},
-{m:98,d:"2026-07-10",et:"3:00 PM",g:"QF",h:"W93",a:"W94",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
-{m:99,d:"2026-07-11",et:"5:00 PM",g:"QF",h:"W91",a:"W92",v:"Miami Stadium",c:"Miami",ko:1},
-{m:100,d:"2026-07-11",et:"9:00 PM",g:"QF",h:"W95",a:"W96",v:"Kansas City Stadium",c:"Kansas City",ko:1},
-{m:101,d:"2026-07-14",et:"3:00 PM",g:"SF",h:"W97",a:"W98",v:"Dallas Stadium",c:"Arlington",ko:1},
-{m:102,d:"2026-07-15",et:"3:00 PM",g:"SF",h:"W99",a:"W100",v:"Atlanta Stadium",c:"Atlanta",ko:1},
-{m:103,d:"2026-07-18",et:"5:00 PM",g:"3RD",h:"L101",a:"L102",v:"Miami Stadium",c:"Miami",ko:1},
-{m:104,d:"2026-07-19",et:"3:00 PM",g:"FINAL",h:"W101",a:"W102",v:"NY/NJ Stadium",c:"East Rutherford",ko:1}];
+{m:1,d:"2026-06-11",et:"1:00 PM CST / 8:00 PM UK",g:"A",h:"Mexico",a:"South Africa",v:"Mexico City Stadium",c:"Mexico City"},
+{m:2,d:"2026-06-11",et:"8:00 PM CST / 3:00 AM UK +1",g:"A",h:"South Korea",a:"Czechia",v:"Guadalajara Stadium",c:"Guadalajara"},
+{m:3,d:"2026-06-12",et:"3:00 PM ET / 8:00 PM UK",g:"B",h:"Canada",a:"Bosnia & Herzegovina",v:"Toronto Stadium",c:"Toronto"},
+{m:4,d:"2026-06-12",et:"6:00 PM PT / 2:00 AM UK +1",g:"D",h:"USA",a:"Paraguay",v:"Los Angeles Stadium",c:"Los Angeles"},
+{m:5,d:"2026-06-13",et:"9:00 PM ET / 2:00 AM UK +1",g:"C",h:"Haiti",a:"Scotland",v:"Boston Stadium",c:"Foxborough"},
+{m:6,d:"2026-06-13",et:"9:00 PM PT / 5:00 AM UK +1",g:"D",h:"Australia",a:"Türkiye",v:"Vancouver Stadium",c:"Vancouver"},
+{m:7,d:"2026-06-13",et:"6:00 PM ET / 11:00 PM UK",g:"C",h:"Brazil",a:"Morocco",v:"New York New Jersey Stadium",c:"East Rutherford"},
+{m:8,d:"2026-06-13",et:"12:00 PM PT / 8:00 PM UK",g:"B",h:"Qatar",a:"Switzerland",v:"San Francisco Stadium",c:"Santa Clara"},
+{m:9,d:"2026-06-14",et:"7:00 PM ET / 12:00 AM UK +1",g:"E",h:"Ivory Coast",a:"Ecuador",v:"Philadelphia Stadium",c:"Philadelphia"},
+{m:10,d:"2026-06-14",et:"12:00 PM CT / 6:00 PM UK",g:"E",h:"Germany",a:"Curaçao",v:"Houston Stadium",c:"Houston"},
+{m:11,d:"2026-06-14",et:"3:00 PM CT / 9:00 PM UK",g:"F",h:"Netherlands",a:"Japan",v:"Dallas Stadium",c:"Arlington"},
+{m:12,d:"2026-06-14",et:"8:00 PM CST / 3:00 AM UK +1",g:"F",h:"Sweden",a:"Tunisia",v:"Monterrey Stadium",c:"Monterrey"},
+{m:13,d:"2026-06-15",et:"6:00 PM ET / 11:00 PM UK",g:"H",h:"Saudi Arabia",a:"Uruguay",v:"Miami Stadium",c:"Miami"},
+{m:14,d:"2026-06-15",et:"12:00 PM ET / 5:00 PM UK",g:"H",h:"Spain",a:"Cape Verde",v:"Atlanta Stadium",c:"Atlanta"},
+{m:15,d:"2026-06-15",et:"6:00 PM PT / 2:00 AM UK +1",g:"G",h:"Iran",a:"New Zealand",v:"Los Angeles Stadium",c:"Los Angeles"},
+{m:16,d:"2026-06-15",et:"12:00 PM PT / 8:00 PM UK",g:"G",h:"Belgium",a:"Egypt",v:"Seattle Stadium",c:"Seattle"},
+{m:17,d:"2026-06-16",et:"3:00 PM ET / 8:00 PM UK",g:"I",h:"France",a:"Senegal",v:"New York New Jersey Stadium",c:"East Rutherford"},
+{m:18,d:"2026-06-16",et:"6:00 PM ET / 11:00 PM UK",g:"I",h:"Iraq",a:"Norway",v:"Boston Stadium",c:"Foxborough"},
+{m:19,d:"2026-06-16",et:"8:00 PM CT / 2:00 AM UK +1",g:"J",h:"Argentina",a:"Algeria",v:"Kansas City Stadium",c:"Kansas City"},
+{m:20,d:"2026-06-16",et:"9:00 PM PT / 5:00 AM UK +1",g:"J",h:"Austria",a:"Jordan",v:"San Francisco Stadium",c:"Santa Clara"},
+{m:21,d:"2026-06-17",et:"7:00 PM ET / 12:00 AM UK +1",g:"L",h:"Ghana",a:"Panama",v:"Toronto Stadium",c:"Toronto"},
+{m:22,d:"2026-06-17",et:"3:00 PM CT / 9:00 PM UK",g:"L",h:"England",a:"Croatia",v:"Dallas Stadium",c:"Arlington"},
+{m:23,d:"2026-06-17",et:"12:00 PM CT / 6:00 PM UK",g:"K",h:"Portugal",a:"DR Congo",v:"Houston Stadium",c:"Houston"},
+{m:24,d:"2026-06-17",et:"8:00 PM CST / 3:00 AM UK +1",g:"K",h:"Uzbekistan",a:"Colombia",v:"Mexico City Stadium",c:"Mexico City"},
+{m:25,d:"2026-06-18",et:"12:00 PM ET / 5:00 PM UK",g:"A",h:"Czechia",a:"South Africa",v:"Atlanta Stadium",c:"Atlanta"},
+{m:26,d:"2026-06-18",et:"12:00 PM PT / 8:00 PM UK",g:"B",h:"Switzerland",a:"Bosnia & Herzegovina",v:"Los Angeles Stadium",c:"Los Angeles"},
+{m:27,d:"2026-06-18",et:"3:00 PM PT / 11:00 PM UK",g:"B",h:"Canada",a:"Qatar",v:"Vancouver Stadium",c:"Vancouver"},
+{m:28,d:"2026-06-18",et:"7:00 PM CST / 2:00 AM UK +1",g:"A",h:"Mexico",a:"South Korea",v:"Guadalajara Stadium",c:"Guadalajara"},
+{m:30,d:"2026-06-19",et:"6:00 PM ET / 11:00 PM UK",g:"C",h:"Scotland",a:"Morocco",v:"Boston Stadium",c:"Foxborough"},
+{m:29,d:"2026-06-19",et:"8:30 PM ET / 1:30 AM UK +1",g:"C",h:"Brazil",a:"Haiti",v:"Philadelphia Stadium",c:"Philadelphia"},
+{m:31,d:"2026-06-19",et:"8:00 PM PT / 4:00 AM UK +1",g:"D",h:"Türkiye",a:"Paraguay",v:"San Francisco Stadium",c:"Santa Clara"},
+{m:32,d:"2026-06-19",et:"12:00 PM PT / 8:00 PM UK",g:"D",h:"USA",a:"Australia",v:"Seattle Stadium",c:"Seattle"},
+{m:33,d:"2026-06-20",et:"4:00 PM ET / 9:00 PM UK",g:"E",h:"Germany",a:"Ivory Coast",v:"Toronto Stadium",c:"Toronto"},
+{m:34,d:"2026-06-20",et:"7:00 PM CT / 1:00 AM UK +1",g:"E",h:"Ecuador",a:"Curaçao",v:"Kansas City Stadium",c:"Kansas City"},
+{m:35,d:"2026-06-20",et:"12:00 PM CT / 6:00 PM UK",g:"F",h:"Netherlands",a:"Sweden",v:"Houston Stadium",c:"Houston"},
+{m:36,d:"2026-06-20",et:"10:00 PM CST / 5:00 AM UK +1",g:"F",h:"Tunisia",a:"Japan",v:"Monterrey Stadium",c:"Monterrey"},
+{m:37,d:"2026-06-21",et:"6:00 PM ET / 11:00 PM UK",g:"H",h:"Uruguay",a:"Cape Verde",v:"Miami Stadium",c:"Miami"},
+{m:38,d:"2026-06-21",et:"12:00 PM ET / 5:00 PM UK",g:"H",h:"Spain",a:"Saudi Arabia",v:"Atlanta Stadium",c:"Atlanta"},
+{m:39,d:"2026-06-21",et:"12:00 PM PT / 8:00 PM UK",g:"G",h:"Belgium",a:"Iran",v:"Los Angeles Stadium",c:"Los Angeles"},
+{m:40,d:"2026-06-21",et:"6:00 PM PT / 2:00 AM UK +1",g:"G",h:"New Zealand",a:"Egypt",v:"Vancouver Stadium",c:"Vancouver"},
+{m:41,d:"2026-06-22",et:"8:00 PM ET / 1:00 AM UK +1",g:"I",h:"Norway",a:"Senegal",v:"New York New Jersey Stadium",c:"East Rutherford"},
+{m:42,d:"2026-06-22",et:"5:00 PM ET / 10:00 PM UK",g:"I",h:"France",a:"Iraq",v:"Philadelphia Stadium",c:"Philadelphia"},
+{m:43,d:"2026-06-22",et:"12:00 PM CT / 6:00 PM UK",g:"J",h:"Argentina",a:"Austria",v:"Dallas Stadium",c:"Arlington"},
+{m:44,d:"2026-06-22",et:"8:00 PM PT / 4:00 AM UK +1",g:"J",h:"Jordan",a:"Algeria",v:"San Francisco Stadium",c:"Santa Clara"},
+{m:45,d:"2026-06-23",et:"4:00 PM ET / 9:00 PM UK",g:"L",h:"England",a:"Ghana",v:"Boston Stadium",c:"Foxborough"},
+{m:46,d:"2026-06-23",et:"7:00 PM ET / 12:00 AM UK +1",g:"L",h:"Panama",a:"Croatia",v:"Toronto Stadium",c:"Toronto"},
+{m:47,d:"2026-06-23",et:"12:00 PM CT / 6:00 PM UK",g:"K",h:"Portugal",a:"Uzbekistan",v:"Houston Stadium",c:"Houston"},
+{m:48,d:"2026-06-23",et:"8:00 PM CST / 3:00 AM UK +1",g:"K",h:"Colombia",a:"DR Congo",v:"Guadalajara Stadium",c:"Guadalajara"},
+{m:49,d:"2026-06-24",et:"6:00 PM ET / 11:00 PM UK",g:"C",h:"Scotland",a:"Brazil",v:"Miami Stadium",c:"Miami"},
+{m:50,d:"2026-06-24",et:"6:00 PM ET / 11:00 PM UK",g:"C",h:"Morocco",a:"Haiti",v:"Atlanta Stadium",c:"Atlanta"},
+{m:51,d:"2026-06-24",et:"12:00 PM PT / 8:00 PM UK",g:"B",h:"Switzerland",a:"Canada",v:"Vancouver Stadium",c:"Vancouver"},
+{m:52,d:"2026-06-24",et:"12:00 PM PT / 8:00 PM UK",g:"B",h:"Bosnia & Herzegovina",a:"Qatar",v:"Seattle Stadium",c:"Seattle"},
+{m:53,d:"2026-06-24",et:"7:00 PM CST / 2:00 AM UK +1",g:"A",h:"Czechia",a:"Mexico",v:"Mexico City Stadium",c:"Mexico City"},
+{m:54,d:"2026-06-24",et:"7:00 PM CST / 2:00 AM UK +1",g:"A",h:"South Africa",a:"South Korea",v:"Monterrey Stadium",c:"Monterrey"},
+{m:55,d:"2026-06-25",et:"4:00 PM ET / 9:00 PM UK",g:"E",h:"Curaçao",a:"Ivory Coast",v:"Philadelphia Stadium",c:"Philadelphia"},
+{m:56,d:"2026-06-25",et:"4:00 PM ET / 9:00 PM UK",g:"E",h:"Ecuador",a:"Germany",v:"NY/NJ Stadium",c:"East Rutherford"},
+{m:57,d:"2026-06-25",et:"6:00 PM CT / 12:00 AM UK +1",g:"F",h:"Japan",a:"Sweden",v:"Dallas Stadium",c:"Arlington"},
+{m:58,d:"2026-06-25",et:"6:00 PM CT / 12:00 AM UK +1",g:"F",h:"Tunisia",a:"Netherlands",v:"Kansas City Stadium",c:"Kansas City"},
+{m:59,d:"2026-06-25",et:"7:00 PM PT / 3:00 AM UK +1",g:"D",h:"Türkiye",a:"USA",v:"Los Angeles Stadium",c:"Los Angeles"},
+{m:60,d:"2026-06-25",et:"7:00 PM PT / 3:00 AM UK +1",g:"D",h:"Paraguay",a:"Australia",v:"San Francisco Stadium",c:"Santa Clara"},
+{m:61,d:"2026-06-26",et:"3:00 PM ET / 8:00 PM UK",g:"I",h:"Norway",a:"France",v:"Boston Stadium",c:"Foxborough"},
+{m:62,d:"2026-06-26",et:"3:00 PM ET / 8:00 PM UK",g:"I",h:"Senegal",a:"Iraq",v:"Toronto Stadium",c:"Toronto"},
+{m:63,d:"2026-06-26",et:"8:00 PM PT / 4:00 AM UK +1",g:"G",h:"Egypt",a:"Iran",v:"Seattle Stadium",c:"Seattle"},
+{m:64,d:"2026-06-26",et:"8:00 PM PT / 4:00 AM UK +1",g:"G",h:"New Zealand",a:"Belgium",v:"Vancouver Stadium",c:"Vancouver"},
+{m:65,d:"2026-06-26",et:"7:00 PM CT / 1:00 AM UK +1",g:"H",h:"Cape Verde",a:"Saudi Arabia",v:"Houston Stadium",c:"Houston"},
+{m:66,d:"2026-06-26",et:"6:00 PM CST / 1:00 AM UK +1",g:"H",h:"Uruguay",a:"Spain",v:"Guadalajara Stadium",c:"Guadalajara"},
+{m:67,d:"2026-06-27",et:"5:00 PM ET / 10:00 PM UK",g:"L",h:"Panama",a:"England",v:"New York New Jersey Stadium",c:"East Rutherford"},
+{m:68,d:"2026-06-27",et:"5:00 PM ET / 10:00 PM UK",g:"L",h:"Croatia",a:"Ghana",v:"Philadelphia Stadium",c:"Philadelphia"},
+{m:69,d:"2026-06-27",et:"9:00 PM CT / 3:00 AM UK +1",g:"J",h:"Algeria",a:"Austria",v:"Kansas City Stadium",c:"Kansas City"},
+{m:70,d:"2026-06-27",et:"9:00 PM CT / 3:00 AM UK +1",g:"J",h:"Jordan",a:"Argentina",v:"Dallas Stadium",c:"Arlington"},
+{m:71,d:"2026-06-27",et:"7:30 PM ET / 12:30 AM UK +1",g:"K",h:"Colombia",a:"Portugal",v:"Miami Stadium",c:"Miami"},
+{m:72,d:"2026-06-27",et:"7:30 PM ET / 12:30 AM UK +1",g:"K",h:"DR Congo",a:"Uzbekistan",v:"Atlanta Stadium",c:"Atlanta"},
+{m:73,d:"2026-06-28",et:"12:00 PM PT / 8:00 PM UK",g:"R32",h:"2A",a:"2B",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
+{m:74,d:"2026-06-29",et:"4:30 PM ET / 9:30 PM UK",g:"R32",h:"1E",a:"3rd(ABCDF)",v:"Boston Stadium",c:"Foxborough",ko:1},
+{m:75,d:"2026-06-29",et:"7:00 PM CST / 2:00 AM UK +1",g:"R32",h:"1F",a:"2C",v:"Monterrey Stadium",c:"Monterrey",ko:1},
+{m:76,d:"2026-06-29",et:"12:00 PM CT / 6:00 PM UK",g:"R32",h:"1C",a:"2F",v:"Houston Stadium",c:"Houston",ko:1},
+{m:77,d:"2026-06-30",et:"5:00 PM ET / 10:00 PM UK",g:"R32",h:"1I",a:"3rd(CDFGH)",v:"NY/NJ Stadium",c:"East Rutherford",ko:1},
+{m:78,d:"2026-06-30",et:"12:00 PM CT / 6:00 PM UK",g:"R32",h:"2E",a:"2I",v:"Dallas Stadium",c:"Arlington",ko:1},
+{m:79,d:"2026-06-30",et:"7:00 PM CST / 2:00 AM UK +1",g:"R32",h:"1A",a:"3rd(CEFHI)",v:"Mexico City Stadium",c:"Mexico City",ko:1},
+{m:80,d:"2026-07-01",et:"12:00 PM ET / 5:00 PM UK",g:"R32",h:"1L",a:"3rd(EHIJK)",v:"Atlanta Stadium",c:"Atlanta",ko:1},
+{m:81,d:"2026-07-01",et:"5:00 PM PT / 1:00 AM UK +1",g:"R32",h:"1D",a:"3rd(BEFIJ)",v:"San Francisco Stadium",c:"Santa Clara",ko:1},
+{m:82,d:"2026-07-01",et:"1:00 PM PT / 9:00 PM UK",g:"R32",h:"1G",a:"3rd(AEHIJ)",v:"Seattle Stadium",c:"Seattle",ko:1},
+{m:83,d:"2026-07-02",et:"7:00 PM ET / 12:00 AM UK +1",g:"R32",h:"2K",a:"2L",v:"Toronto Stadium",c:"Toronto",ko:1},
+{m:84,d:"2026-07-02",et:"12:00 PM PT / 8:00 PM UK",g:"R32",h:"1H",a:"2J",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
+{m:85,d:"2026-07-02",et:"8:00 PM PT / 4:00 AM UK +1",g:"R32",h:"1B",a:"3rd(EFGIJ)",v:"Vancouver Stadium",c:"Vancouver",ko:1},
+{m:86,d:"2026-07-03",et:"6:00 PM ET / 11:00 PM UK",g:"R32",h:"1J",a:"2H",v:"Miami Stadium",c:"Miami",ko:1},
+{m:87,d:"2026-07-03",et:"8:30 PM CT / 2:30 AM UK +1",g:"R32",h:"1K",a:"3rd(DEIJL)",v:"Kansas City Stadium",c:"Kansas City",ko:1},
+{m:88,d:"2026-07-03",et:"1:00 PM CT / 7:00 PM UK",g:"R32",h:"2D",a:"2G",v:"Dallas Stadium",c:"Arlington",ko:1},
+{m:89,d:"2026-07-04",et:"5:00 PM ET / 10:00 PM UK",g:"R16",h:"W74",a:"W77",v:"Philadelphia Stadium",c:"Philadelphia",ko:1},
+{m:90,d:"2026-07-04",et:"12:00 PM CT / 6:00 PM UK",g:"R16",h:"W73",a:"W75",v:"Houston Stadium",c:"Houston",ko:1},
+{m:91,d:"2026-07-05",et:"4:00 PM ET / 9:00 PM UK",g:"R16",h:"W76",a:"W78",v:"NY/NJ Stadium",c:"East Rutherford",ko:1},
+{m:92,d:"2026-07-05",et:"6:00 PM CST / 1:00 AM UK +1",g:"R16",h:"W79",a:"W80",v:"Mexico City Stadium",c:"Mexico City",ko:1},
+{m:93,d:"2026-07-06",et:"2:00 PM CT / 8:00 PM UK",g:"R16",h:"W83",a:"W84",v:"Dallas Stadium",c:"Arlington",ko:1},
+{m:94,d:"2026-07-06",et:"5:00 PM PT / 1:00 AM UK +1",g:"R16",h:"W81",a:"W82",v:"Seattle Stadium",c:"Seattle",ko:1},
+{m:95,d:"2026-07-07",et:"12:00 PM ET / 5:00 PM UK",g:"R16",h:"W86",a:"W88",v:"Atlanta Stadium",c:"Atlanta",ko:1},
+{m:96,d:"2026-07-07",et:"1:00 PM PT / 9:00 PM UK",g:"R16",h:"W85",a:"W87",v:"Vancouver Stadium",c:"Vancouver",ko:1},
+{m:97,d:"2026-07-09",et:"4:00 PM ET / 9:00 PM UK",g:"QF",h:"W89",a:"W90",v:"Boston Stadium",c:"Foxborough",ko:1},
+{m:98,d:"2026-07-10",et:"12:00 PM PT / 8:00 PM UK",g:"QF",h:"W93",a:"W94",v:"Los Angeles Stadium",c:"Los Angeles",ko:1},
+{m:99,d:"2026-07-11",et:"5:00 PM ET / 10:00 PM UK",g:"QF",h:"W91",a:"W92",v:"Miami Stadium",c:"Miami",ko:1},
+{m:100,d:"2026-07-11",et:"8:00 PM CT / 2:00 AM UK +1",g:"QF",h:"W95",a:"W96",v:"Kansas City Stadium",c:"Kansas City",ko:1},
+{m:101,d:"2026-07-14",et:"2:00 PM CT / 8:00 PM UK",g:"SF",h:"W97",a:"W98",v:"Dallas Stadium",c:"Arlington",ko:1},
+{m:102,d:"2026-07-15",et:"3:00 PM ET / 8:00 PM UK",g:"SF",h:"W99",a:"W100",v:"Atlanta Stadium",c:"Atlanta",ko:1},
+{m:103,d:"2026-07-18",et:"5:00 PM ET / 10:00 PM UK",g:"3RD",h:"L101",a:"L102",v:"Miami Stadium",c:"Miami",ko:1},
+{m:104,d:"2026-07-19",et:"3:00 PM ET / 8:00 PM UK",g:"FINAL",h:"W101",a:"W102",v:"NY/NJ Stadium",c:"East Rutherford",ko:1}];
 
 // ════════════════════════════════════════════
 // CORE FUNCTIONS
@@ -1147,6 +1165,8 @@ function applyLiveData(){
     var ct=liveData.confirmedTeams;
     for(var po in ct){
       var newTeam=ct[po];
+      if(VALID_TEAMS[po])continue;            // never replace a real participant
+      if(!VALID_TEAMS[newTeam]&&!F[newTeam])continue; // only inject known teams
       S.forEach(function(m){
         if(m.h===po)m.h=newTeam;
         if(m.a===po)m.a=newTeam;
@@ -1165,10 +1185,8 @@ function applyLiveData(){
   // Update knockout teams from winners/losers
   S.forEach(function(m){
     if(m.ko){
-      if(m.h.match(/^W\d+/)&&liveData[m.h]){m.h=liveData[m.h];}
-      if(m.a.match(/^W\d+/)&&liveData[m.a]){m.a=liveData[m.a];}
-      if(m.h.match(/^L\d+/)&&liveData[m.h]){m.h=liveData[m.h];}
-      if(m.a.match(/^L\d+/)&&liveData[m.a]){m.a=liveData[m.a];}
+      if(m.h.match(/^[WL]\d+/)&&liveData[m.h]&&VALID_TEAMS[liveData[m.h]]){m.h=liveData[m.h];}
+      if(m.a.match(/^[WL]\d+/)&&liveData[m.a]&&VALID_TEAMS[liveData[m.a]]){m.a=liveData[m.a];}
     }
   });
 
