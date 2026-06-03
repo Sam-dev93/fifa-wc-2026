@@ -195,6 +195,10 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 .fcx-out{padding:22px;text-align:center;color:#a8b5cc;background:#15203a;border:1px dashed #213252;border-radius:12px}
 .fcx-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
 .fcx-badge.won{background:rgba(69,212,131,.22);color:#45d483}.fcx-badge.lost{background:rgba(247,85,85,.22);color:#f75555}
+
+.posf{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+.posb{font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;background:var(--card2);color:var(--w2);border:1px solid var(--card3);cursor:pointer}
+.posb.a{background:var(--acc);color:#1a1205;border-color:var(--acc)}
 </style>
 </head>
 <body>
@@ -212,7 +216,7 @@ nav{display:flex;background:rgba(21,32,58,.92);border:1px solid rgba(255,255,255
 // ── DATA VERSION / CACHE-BUST ──────────────────────────────
 // Bumping this string wipes stale cached data (old fixtures/teams) from
 // localStorage AND the service-worker caches on the next load.
-var DATA_VERSION="2026-finaldraw-v9";
+var DATA_VERSION="2026-finaldraw-v10";
 try{
   if(localStorage.getItem("wc26_dataVersion")!==DATA_VERSION){
     localStorage.removeItem("wc26_live");
@@ -889,6 +893,7 @@ function rVD(vi){
 // COUNTRY TRACKER
 // ════════════════════════════════════════════
 var sel=null;
+var selPos="all";
 function rTr(){
   var e=document.getElementById("p-tracker");
   if(sel){rDt(e,sel);return;}
@@ -906,7 +911,7 @@ function rTr(){
     document.querySelectorAll("#cG .cb").forEach(function(c){c.style.display=c.dataset.n.indexOf(q)!==-1?"":"none";});
   });
   document.querySelectorAll("[data-team]").forEach(function(b){
-    b.addEventListener("click",function(){sel=b.dataset.team;rTr();});
+    b.addEventListener("click",function(){sel=b.dataset.team;selPos="all";rTr();});
   });
 }
 
@@ -936,10 +941,21 @@ function rDt(e,team){
   if(isPO)h+='<div class="hero"><span class="rd">\u26a0\ufe0f Must qualify via <b>'+poP+'</b> (March 2026)</span> to enter Group '+gn+'.</div>';
   h+='<div class="st">Group Stage</div>';
   for(var i=0;i<gms.length;i++)h+=mc(gms[i]);
-  h+=rs("Round of 32",byR.R32)+rs("Round of 16",byR.R16)+rs("Quarter-Finals",byR.QF)+rs("Semi-Finals",byR.SF)+rs("Final",byR.FINAL)+rs("3rd Place",byR["3RD"]);
+  var reach = selPos==="all" ? null : koReach(team, selPos);
+  function flt(arr){ return reach ? arr.filter(function(m){return reach.has(m.m);}) : arr; }
+  var notes={
+    all:"Every match "+team+" could appear in \u2014 across all finishing positions.",
+    "1":"If "+team+" <b>win Group "+gn+"</b> \u2014 their route as group winner.",
+    "2":"If "+team+" finish <b>2nd in Group "+gn+"</b> \u2014 their runner-up route.",
+    "3":"If "+team+" finish <b>3rd</b> and qualify (one of the 8 best), they could enter any of the matches below."};
+  h+='<div class="st">Knockout Possibilities</div>';
+  h+='<div class="posf">'+[["all","All"],["1","If 1st"],["2","If 2nd"],["3","If 3rd"]].map(function(o){return '<button class="posb'+(selPos===o[0]?" a":"")+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join("")+'</div>';
+  h+='<div class="hero" style="margin-top:6px;font-size:13px">'+notes[selPos]+'</div>';
+  h+=rs("Round of 32",flt(byR.R32))+rs("Round of 16",flt(byR.R16))+rs("Quarter-Finals",flt(byR.QF))+rs("Semi-Finals",flt(byR.SF))+rs("Final",flt(byR.FINAL))+rs("3rd Place",flt(byR["3RD"]));
 
   e.innerHTML=h;
-  document.getElementById("backBtn").addEventListener("click",function(){sel=null;rTr();window.scrollTo(0,0);});
+  document.getElementById("backBtn").addEventListener("click",function(){sel=null;selPos="all";rTr();window.scrollTo(0,0);});
+  document.querySelectorAll("[data-pos]").forEach(function(b){b.addEventListener("click",function(){selPos=b.dataset.pos;rTr();});});
 }
 
 if("serviceWorker" in navigator){
@@ -1381,6 +1397,20 @@ function rF(){
   host.innerHTML='<select class="fcx-sel" id="fcSelF">'+opts+'</select><div class="fcx-note">'+(prov?'Provisional \u2014 built from the current group tables. Updates live as results come in.':'Live \u2014 each finished match locks an opponent; future rounds show everyone who could still get there.')+'</div>'+body;
   var sel=document.getElementById('fcSelF');sel.addEventListener('change',function(){fcTeamSel=sel.value;rF();});
 }
+
+
+/* ---- Countries-tab position filter helpers ---- */
+var THIRD_ALLOWED={74:'ABCDF',77:'CDFGH',79:'CEFHI',80:'EHIJK',81:'BEFIJ',82:'AEHIJ',85:'EFGIJ',87:'DEIJL'};
+function r32WinnerMatch(g){var ks=Object.keys(R32F);for(var i=0;i<ks.length;i++){var d=R32F[ks[i]];if(d.a.w===g||d.b.w===g)return +ks[i];}return null;}
+function r32RunnerMatch(g){var ks=Object.keys(R32F);for(var i=0;i<ks.length;i++){var d=R32F[ks[i]];if(d.a.r===g||d.b.r===g)return +ks[i];}return null;}
+function r32ThirdMatches(g){var out=[];Object.keys(THIRD_ALLOWED).forEach(function(m){if(THIRD_ALLOWED[m].indexOf(g)>=0)out.push(+m);});return out;}
+function fwdPath(r32){var p=[r32],c=r32;while(true){var par=fcParent(c);if(!par)break;p.push(par);if(par===104)break;c=par;}return p;}
+function koReach(team,pos){var gr=fG(team);if(!gr)return new Set();var g=gr.n;var starts=[];
+  if(pos==="1"){var w=r32WinnerMatch(g);if(w)starts=[w];}
+  else if(pos==="2"){var r=r32RunnerMatch(g);if(r)starts=[r];}
+  else if(pos==="3"){starts=r32ThirdMatches(g);}
+  var set=new Set();starts.forEach(function(s){fwdPath(s).forEach(function(m){set.add(m);});});
+  if(set.size)set.add(103);return set;}
 
 </script>
 </body>
