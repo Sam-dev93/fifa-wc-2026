@@ -1,49 +1,82 @@
-const CACHE = 'wc2026-v12';
-const ASSETS = [
+/* ============================================================
+   World Cup 2026 — Service Worker
+   ⬆️  BUMP THIS VERSION EVERY TIME YOU DEPLOY A CHANGE.
+   Changing the string is what tells browsers a new version
+   exists → the app auto-updates and wipes the old cache.
+   ============================================================ */
+const CACHE_NAME = 'world-cup-tickets-v3';
+
+const PRECACHE = [
   './',
   './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&display=swap'
+  './manifest.json'
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+// Install — pre-cache the shell and activate ASAP (no "waiting")
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE)).catch(() => {})
+  );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+// Activate — delete every cache that isn't the current version, then take control
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+// Allow the page to tell a waiting worker to take over now
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
-  // NEVER cache API/proxy requests - let them go straight to network
-  if (url.hostname.includes('workers.dev') || url.hostname.includes('football-data.org')) {
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  let url;
+  try { url = new URL(req.url); } catch (e) { return; }
+
+  // Google Sheets API — always live, never cached
+  if (url.hostname.indexOf('googleapis.com') !== -1) {
+    event.respondWith(
+      fetch(req).catch(() => new Response(
+        JSON.stringify({ error: 'offline', message: 'Unable to fetch data while offline' }),
+        { headers: { 'Content-Type': 'application/json' } }
+      ))
+    );
     return;
   }
 
-  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '') {
-    e.respondWith(
-      fetch(e.request).then(r => {
-        const clone = r.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return r;
-      }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+  // Same-origin app files (index.html, manifest, icons) — NETWORK FIRST.
+  // Always get the freshest file when online; fall back to cache when offline.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(req)
+        .then(res => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
     );
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-        const clone = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return resp;
-      }))
-    );
+    return;
   }
+
+  // Cross-origin libraries (e.g. jsPDF from a CDN) — cache first, they rarely change
+  event.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      if (res && res.status === 200) {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      }
+      return res;
+    }).catch(() => cached))
+  );
 });
