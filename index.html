@@ -534,10 +534,15 @@ var activeTab="overview";
 // ════════════════════════════════════════════
 // OVERVIEW - Clean, spacious
 // ════════════════════════════════════════════
+// Live data must exist before the first render (mc() reads it) —
+// the API section lower down re-loads the same cache, harmlessly.
+var liveData={};try{liveData=JSON.parse(localStorage.getItem("wc26_live")||"{}");}catch(e){liveData={};}
+
 function rO(){
+  var LD=(typeof liveData==="undefined"||!liveData)?{}:liveData;
   var today=new Date().toISOString().split("T")[0];
   var todayMs=S.filter(function(m){return m.d===today;});
-  function getSc(m){return liveData.scores?liveData.scores[m.m]:null;}
+  function getSc(m){return LD.scores?LD.scores[m.m]:null;}
   var live=todayMs.filter(function(m){var sc=getSc(m);return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
   var fin=todayMs.filter(function(m){var sc=getSc(m);return sc&&sc.status==="FINISHED";});
   var up=todayMs.filter(function(m){return live.indexOf(m)===-1&&fin.indexOf(m)===-1;});
@@ -571,8 +576,9 @@ var selGroup=null;
 // Live group table: API standings when available, otherwise computed
 // from live/finished results so the table is always current.
 function computeGroupTable(gn){
-  if(liveData.standings&&liveData.standings[gn]&&liveData.standings[gn].length){
-    return liveData.standings[gn].map(function(r,i){r.pos=r.pos||i+1;return r;});
+  var LD=(typeof liveData==="undefined"||!liveData)?{}:liveData;
+  if(LD.standings&&LD.standings[gn]&&LD.standings[gn].length){
+    return LD.standings[gn].map(function(r,i){r.pos=r.pos||i+1;return r;});
   }
   var g=null;for(var i=0;i<G.length;i++)if(G[i].n===gn){g=G[i];break;}
   if(!g)return [];
@@ -580,7 +586,7 @@ function computeGroupTable(gn){
   g.t.forEach(function(t){var n=gN(t);T[n]={team:n,mp:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0};});
   S.forEach(function(m){
     if(m.g!==gn)return;
-    var sc=liveData.scores?liveData.scores[m.m]:null;
+    var sc=LD.scores?LD.scores[m.m]:null;
     if(!sc||sc.hs==null||sc.as==null)return;
     if(!(sc.status==="FINISHED"||sc.status==="IN_PLAY"||sc.status==="PAUSED"))return;
     var H=T[m.h],A=T[m.a];if(!H||!A)return;
@@ -595,9 +601,10 @@ function computeGroupTable(gn){
   return rows;
 }
 function gTable(gn){
+  var LD=(typeof liveData==="undefined"||!liveData)?{}:liveData;
   var st=computeGroupTable(gn);
   if(!st.length)return "";
-  var anyLive=S.some(function(m){if(m.g!==gn)return false;var sc=liveData.scores?liveData.scores[m.m]:null;return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
+  var anyLive=S.some(function(m){if(m.g!==gn)return false;var sc=LD.scores?LD.scores[m.m]:null;return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
   var h='';
   if(anyLive)h+='<div style="font-size:9px;color:var(--green);font-weight:700;margin:2px 0 4px">\ud83d\udfe2 LIVE \u2014 includes in-play scores</div>';
   h+='<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:8px"><tr style="color:var(--w3)"><td style="width:14px"></td><td></td><td></td><td style="text-align:center">P</td><td style="text-align:center">W</td><td style="text-align:center">D</td><td style="text-align:center">L</td><td style="text-align:center">GD</td><td style="text-align:center;font-weight:700;color:var(--acc)">Pts</td></tr>';
