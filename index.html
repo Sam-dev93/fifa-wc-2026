@@ -499,7 +499,7 @@ function mc(m){
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
-var tabs=["Today","Groups","Matches","Knockout","Forecast","Venues","Countries"];
+var tabs=["Today","Table","Matches","Knockout","Forecast","Venues","Countries"];
 var tabIds=["overview","groups","matches","knockout","forecast","venues","tracker"];
 var navEl=document.getElementById("nav");
 var pagesEl=document.getElementById("pages");
@@ -1279,11 +1279,35 @@ function applyLiveData(){
     }
   }
 
-  // Update knockout teams from winners/losers
+  // Resolve group placeholders once mathematically confirmed:
+  // 1B / 2B when that group has finished all 6 matches;
+  // 3rd(...) only when ALL groups are done (Annex C allocation).
+  try{
+    if(typeof fcComplete==="function"&&typeof fcTable==="function"){
+      for(var gi=0;gi<G.length;gi++){
+        var gg=G[gi].n;
+        if(!fcComplete(gg))continue;
+        var ft=fcTable(gg);
+        if(ft[0]&&ft[0].team)liveData["1"+gg]=ft[0].team;
+        if(ft[1]&&ft[1].team)liveData["2"+gg]=ft[1].team;
+      }
+      if(typeof fcAll==="function"&&fcAll()&&typeof fcR32occ==="function"){
+        var occ=fcR32occ();
+        Object.keys(occ).forEach(function(mn){
+          var d=R32F[mn],sm=(typeof Smap!=="undefined")?Smap[+mn]:null;
+          if(!sm)return;
+          if(d.a&&d.a.c!==undefined&&occ[mn].a&&/^3rd\(/.test(sm.h))liveData[sm.h]=occ[mn].a;
+          if(d.b&&d.b.c!==undefined&&occ[mn].b&&/^3rd\(/.test(sm.a))liveData[sm.a]=occ[mn].b;
+        });
+      }
+    }
+  }catch(e){}
+
+  // Update knockout teams from winners/losers + confirmed group slots
   S.forEach(function(m){
     if(m.ko){
-      if(m.h.match(/^[WL]\d+/)&&liveData[m.h]&&VALID_TEAMS[liveData[m.h]]){m.h=liveData[m.h];}
-      if(m.a.match(/^[WL]\d+/)&&liveData[m.a]&&VALID_TEAMS[liveData[m.a]]){m.a=liveData[m.a];}
+      if(liveData[m.h]&&VALID_TEAMS[liveData[m.h]]){m.h=liveData[m.h];}
+      if(liveData[m.a]&&VALID_TEAMS[liveData[m.a]]){m.a=liveData[m.a];}
     }
   });
 
