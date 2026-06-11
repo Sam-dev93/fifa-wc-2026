@@ -469,7 +469,7 @@ function mc(m){
   var today=new Date().toISOString().split("T")[0];
   var isToday=m.d===today;
 
-  if(sc&&sc.status==="FINISHED"){
+  if(sc&&sc.status==="FINISHED"&&sc.hs!=null&&sc.as!=null){
     var sT=sc.hs+" - "+sc.as;
     if(sc.hsp!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">('+sc.hsp+'-'+sc.asp+' pen)</small>';
     else if(sc.hse!==null)sT+=' <small style="font-size:11px;font-weight:500;color:var(--w3)">(aet)</small>';
@@ -480,11 +480,11 @@ function mc(m){
     if(sc.winner==="HOME_TEAM")hWin=' style="color:var(--acc);font-weight:800"';
     else if(sc.winner==="AWAY_TEAM")aWin=' style="color:var(--acc);font-weight:800"';
   } else if(sc&&sc.status==="IN_PLAY"){
-    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;animation:pulse 1.5s infinite">'+sc.hs+" - "+sc.as+'</div>';
+    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;animation:pulse 1.5s infinite">'+(sc.hs==null?0:sc.hs)+" - "+(sc.as==null?0:sc.as)+'</div>';
     midExtra='\ud83d\udfe2 LIVE '+(sc.minute?sc.minute+"'":"")+' \u00b7 '+gLabel(m.g);
     cardStyle='border-left:3px solid var(--green);box-shadow:0 0 20px rgba(69,212,131,.15)';
   } else if(sc&&sc.status==="PAUSED"){
-    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0">'+sc.hs+" - "+sc.as+'</div>';
+    scoreHtml='<div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0">'+(sc.hs==null?0:sc.hs)+" - "+(sc.as==null?0:sc.as)+'</div>';
     midExtra='\u23f8\ufe0f HT \u00b7 '+gLabel(m.g);
     cardStyle='border-left:3px solid var(--orange);box-shadow:0 0 20px rgba(255,159,10,.12)';
   } else if(isToday){
@@ -499,7 +499,7 @@ function mc(m){
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
-var tabs=["Overview","Groups","Matches","Knockout","Forecast","Venues","Countries"];
+var tabs=["Today","Groups","Matches","Knockout","Forecast","Venues","Countries"];
 var tabIds=["overview","groups","matches","knockout","forecast","venues","tracker"];
 var navEl=document.getElementById("nav");
 var pagesEl=document.getElementById("pages");
@@ -535,13 +535,32 @@ var activeTab="overview";
 // OVERVIEW - Clean, spacious
 // ════════════════════════════════════════════
 function rO(){
-  var KD=[["JUN 11","Group Stage Begins"],["JUN 27","Group Stage Ends"],["JUN 28\u2013JUL 3","Round of 32"],["JUL 4\u20137","Round of 16"],["JUL 9\u201311","Quarter-Finals"],["JUL 14\u201315","Semi-Finals"],["JUL 18","3rd Place \u2014 Miami"],["JUL 19","\ud83c\udfc6 FINAL \u2014 New York/NJ"]];
-  var kdh="";for(var i=0;i<KD.length;i++){kdh+='<div class="tl-row"><span class="d">'+KD[i][0]+'</span><span class="t">'+KD[i][1]+'</span></div>';}
-
-  document.getElementById("p-overview").innerHTML=
-    '<div class="stats"><div class="stat"><div class="v">48</div><div class="l">Teams</div></div><div class="stat"><div class="v">104</div><div class="l">Matches</div></div><div class="stat"><div class="v">16</div><div class="l">Venues</div></div></div>'+
-    '<div class="hero"><b>The first ever 48-team World Cup.</b> 12 groups of 4. Top 2 + 8 best 3rd-placed teams advance to the <span class="cy">Round of 32</span>.<br><br><span class="g">France</span> (left bracket) and <span class=\"g\">Argentina</span> (right bracket) are separated \u2014 they cannot meet before the semi-finals.<br><br>\ud83c\udfc6 <b>Final:</b> MetLife Stadium, NY/NJ \u2014 <span class="g">Jul 19, 3:00 PM ET</span></div>'+
-    '<div class="st">Schedule</div><div class="tl">'+kdh+'</div>';
+  var today=new Date().toISOString().split("T")[0];
+  var todayMs=S.filter(function(m){return m.d===today;});
+  function getSc(m){return liveData.scores?liveData.scores[m.m]:null;}
+  var live=todayMs.filter(function(m){var sc=getSc(m);return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
+  var fin=todayMs.filter(function(m){var sc=getSc(m);return sc&&sc.status==="FINISHED";});
+  var up=todayMs.filter(function(m){return live.indexOf(m)===-1&&fin.indexOf(m)===-1;});
+  var dateStr=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  var h='<div style="text-align:center;padding:14px 0 4px"><div style="font-size:18px;font-weight:800;color:var(--w)">'+dateStr+'</div>'
+    +'<div style="font-size:11px;color:var(--w4);margin-top:2px">'+(todayMs.length?todayMs.length+' match'+(todayMs.length===1?'':'es')+' today \u00b7 scores update automatically':'')+'</div></div>';
+  if(!todayMs.length){
+    var future=S.filter(function(m){return m.d>today;}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
+    if(future.length){
+      var nd=future[0].d;
+      var next=future.filter(function(m){return m.d===nd;});
+      var ndStr=new Date(nd+"T12:00:00Z").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+      h+='<div class="st">No matches today \u2014 next up: '+ndStr+'</div>';
+      for(var i=0;i<next.length;i++)h+=mc(next[i]);
+    } else {
+      h+='<div class="hero"><b>Tournament complete \ud83c\udfc6</b></div>';
+    }
+  } else {
+    if(live.length){h+='<div class="st">\ud83d\udfe2 Live Now</div>';for(var i=0;i<live.length;i++)h+=mc(live[i]);}
+    if(up.length){h+='<div class="st">\ud83d\udfe1 Upcoming Today</div>';for(var i=0;i<up.length;i++)h+=mc(up[i]);}
+    if(fin.length){h+='<div class="st">\u2705 Finished</div>';for(var i=0;i<fin.length;i++)h+=mc(fin[i]);}
+  }
+  document.getElementById("p-overview").innerHTML=h;
 }
 rO();
 
@@ -549,21 +568,56 @@ rO();
 // GROUPS
 // ════════════════════════════════════════════
 var selGroup=null;
+// Live group table: API standings when available, otherwise computed
+// from live/finished results so the table is always current.
+function computeGroupTable(gn){
+  if(liveData.standings&&liveData.standings[gn]&&liveData.standings[gn].length){
+    return liveData.standings[gn].map(function(r,i){r.pos=r.pos||i+1;return r;});
+  }
+  var g=null;for(var i=0;i<G.length;i++)if(G[i].n===gn){g=G[i];break;}
+  if(!g)return [];
+  var T={};
+  g.t.forEach(function(t){var n=gN(t);T[n]={team:n,mp:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0};});
+  S.forEach(function(m){
+    if(m.g!==gn)return;
+    var sc=liveData.scores?liveData.scores[m.m]:null;
+    if(!sc||sc.hs==null||sc.as==null)return;
+    if(!(sc.status==="FINISHED"||sc.status==="IN_PLAY"||sc.status==="PAUSED"))return;
+    var H=T[m.h],A=T[m.a];if(!H||!A)return;
+    H.mp++;A.mp++;H.gf+=sc.hs;H.ga+=sc.as;A.gf+=sc.as;A.ga+=sc.hs;
+    if(sc.hs>sc.as){H.w++;A.l++;H.pts+=3;}
+    else if(sc.hs<sc.as){A.w++;H.l++;A.pts+=3;}
+    else {H.d++;A.d++;H.pts++;A.pts++;}
+  });
+  var rows=Object.keys(T).map(function(k){var r=T[k];r.gd=r.gf-r.ga;return r;});
+  rows.sort(function(a,b){return b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.team.localeCompare(b.team);});
+  rows.forEach(function(r,i){r.pos=i+1;});
+  return rows;
+}
+function gTable(gn){
+  var st=computeGroupTable(gn);
+  if(!st.length)return "";
+  var anyLive=S.some(function(m){if(m.g!==gn)return false;var sc=liveData.scores?liveData.scores[m.m]:null;return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
+  var h='';
+  if(anyLive)h+='<div style="font-size:9px;color:var(--green);font-weight:700;margin:2px 0 4px">\ud83d\udfe2 LIVE \u2014 includes in-play scores</div>';
+  h+='<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:8px"><tr style="color:var(--w3)"><td style="width:14px"></td><td></td><td></td><td style="text-align:center">P</td><td style="text-align:center">W</td><td style="text-align:center">D</td><td style="text-align:center">L</td><td style="text-align:center">GD</td><td style="text-align:center;font-weight:700;color:var(--acc)">Pts</td></tr>';
+  for(var s=0;s<st.length;s++){
+    var row=st[s];
+    var qc=s<2?'color:var(--green)':(s===2?'color:var(--orange)':'color:var(--w3)');
+    h+='<tr style="'+qc+'"><td style="font-size:10px;color:var(--w4)">'+(row.pos||s+1)+'</td><td style="padding:4px 0">'+fl(row.team)+'</td><td style="padding:4px 6px;font-weight:600">'+row.team+'</td><td style="text-align:center">'+row.mp+'</td><td style="text-align:center">'+row.w+'</td><td style="text-align:center">'+row.d+'</td><td style="text-align:center">'+row.l+'</td><td style="text-align:center">'+(row.gd>0?'+':'')+row.gd+'</td><td style="text-align:center;font-weight:700;color:var(--acc)">'+row.pts+'</td></tr>';
+  }
+  return h+'</table>';
+}
 function rG(){
   if(selGroup!==null){rGD(selGroup);return;}
   var h='<div class="g2">';
   for(var i=0;i<G.length;i++){
     var g=G[i];
     h+='<div class="grp" data-gi="'+i+'" style="cursor:pointer"><div class="grp-hd" style="color:'+tc(g.n)+'">GROUP '+g.n+'<span style="float:right;font-size:12px;color:var(--w4)">\u203A</span><small>'+g.r+'</small></div>';
-    // If live standings available, show table
-    if(liveData.standings&&liveData.standings[g.n]){
-      var st=liveData.standings[g.n];
-      h+='<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:8px"><tr style="color:var(--w3)"><td></td><td></td><td style="text-align:center">P</td><td style="text-align:center">W</td><td style="text-align:center">D</td><td style="text-align:center">L</td><td style="text-align:center">GD</td><td style="text-align:center;font-weight:700;color:var(--acc)">Pts</td></tr>';
-      for(var s=0;s<st.length;s++){
-        var row=st[s],qc=s<2?'color:var(--green)':'color:var(--w2)';
-        h+='<tr style="'+qc+'"><td style="padding:4px 0">'+fl(row.team)+'</td><td style="padding:4px 6px;font-weight:600">'+row.team+'</td><td style="text-align:center">'+row.mp+'</td><td style="text-align:center">'+row.w+'</td><td style="text-align:center">'+row.d+'</td><td style="text-align:center">'+row.l+'</td><td style="text-align:center">'+(row.gd>0?'+':'')+row.gd+'</td><td style="text-align:center;font-weight:700;color:var(--acc)">'+row.pts+'</td></tr>';
-      }
-      h+='</table>';
+    // Always show a live table (API standings or computed from results)
+    var tbl=gTable(g.n);
+    if(tbl){
+      h+=tbl;
     } else {
       for(var j=0;j<g.t.length;j++){
         var t=g.t[j],n=gN(t),f=gF(t),po=typeof t!=="string";
@@ -607,16 +661,9 @@ function rGD(gi){
     h+='</div>';
     if(po)h+='<div class="grp-sub">'+t.ps.map(function(p){return fl(p)+' '+p;}).join(' \u00b7 ')+'</div>';
   }
-  // Live standings table if available
-  if(liveData.standings&&liveData.standings[gn]){
-    var st=liveData.standings[gn];
-    h+='<table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:12px"><tr style="color:var(--w3)"><td></td><td></td><td style="text-align:center">P</td><td style="text-align:center">W</td><td style="text-align:center">D</td><td style="text-align:center">L</td><td style="text-align:center">GD</td><td style="text-align:center;font-weight:700;color:var(--acc)">Pts</td></tr>';
-    for(var s=0;s<st.length;s++){
-      var row=st[s],qc=s<2?'color:var(--green)':'color:var(--w2)';
-      h+='<tr style="'+qc+'"><td style="padding:4px 0">'+fl(row.team)+'</td><td style="padding:4px 6px;font-weight:600">'+row.team+'</td><td style="text-align:center">'+row.mp+'</td><td style="text-align:center">'+row.w+'</td><td style="text-align:center">'+row.d+'</td><td style="text-align:center">'+row.l+'</td><td style="text-align:center">'+(row.gd>0?'+':'')+row.gd+'</td><td style="text-align:center;font-weight:700;color:var(--acc)">'+row.pts+'</td></tr>';
-    }
-    h+='</table>';
-  }
+  // Live standings table (always shown — API or computed from results)
+  var dtbl=gTable(gn);
+  if(dtbl)h+='<div style="margin-top:12px">'+dtbl+'</div>';
   h+='</div>';
 
   // All group matches
@@ -1132,10 +1179,16 @@ function processMatches(data){
 
     if(ourMatch){
       var mnum=ourMatch.m;
+      // Normalise: a match can't be FINISHED/LIVE with no score —
+      // treat it as still upcoming so cards show kickoff, not nulls
+      var _hs=m.score&&m.score.fullTime?m.score.fullTime.home:null;
+      var _as=m.score&&m.score.fullTime?m.score.fullTime.away:null;
+      var _st=m.status;
+      if((_st==="FINISHED"||_st==="IN_PLAY"||_st==="PAUSED")&&(_hs==null||_as==null))_st="TIMED";
       liveData.scores[mnum]={
-        hs:m.score.fullTime.home, as:m.score.fullTime.away,
-        hsh:m.score.halfTime.home, ash:m.score.halfTime.away,
-        status:m.status, minute:m.minute||null,
+        hs:_hs, as:_as, status:_st,
+        hsh:m.score.halfTime?m.score.halfTime.home:null, ash:m.score.halfTime?m.score.halfTime.away:null,
+        minute:m.minute||null,
         winner:m.score.winner||null,
         hse:m.score.extraTime?m.score.extraTime.home:null,
         ase:m.score.extraTime?m.score.extraTime.away:null,
@@ -1286,7 +1339,14 @@ function scheduleLivePoll(){
 
 // ── Init live data ──
 if(API_KEY){
-  if(liveData.scores)applyLiveData();
+  if(liveData.scores){
+    // Purge any poisoned cache entries (FINISHED/LIVE with null score)
+    Object.keys(liveData.scores).forEach(function(k){
+      var s=liveData.scores[k];
+      if(s&&(s.status==="FINISHED"||s.status==="IN_PLAY"||s.status==="PAUSED")&&(s.hs==null||s.as==null))s.status="TIMED";
+    });
+    applyLiveData();
+  }
   setTimeout(function(){
     fetchLive(true);
     // If still no lastFetch after 5 seconds, show error state
