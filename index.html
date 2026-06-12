@@ -1034,7 +1034,7 @@ var lastFetch = parseInt(localStorage.getItem("wc26_lastFetch") || "0");
 // Team name mapping: football-data.org names → our names
 var apiNameMap = {
   "Korea Republic":"South Korea","IR Iran":"Iran","Côte d'Ivoire":"Ivory Coast",
-  "Cabo Verde":"Cape Verde","Türkiye":"Turkey","Czechia":"Czech Republic",
+  "Cabo Verde":"Cape Verde","Turkey":"Türkiye","Czech Republic":"Czechia",
   "Bosnia and Herzegovina":"Bosnia & Herzegovina","United States":"USA",
   "Cote d'Ivoire":"Ivory Coast","Korea, Republic of":"South Korea",
   "Iran, Islamic Republic of":"Iran","Congo DR":"DR Congo"
@@ -1159,9 +1159,18 @@ function processMatches(data){
     // The API may have a different numbering, so we also try date+group matching
     if(!ourMatch&&m.group&&m.utcDate){
       var apiDate=m.utcDate.substring(0,10);
+      // NA evening kickoffs land on the NEXT day in UTC, so also try
+      // the day before the API's UTC date.
+      var dt=new Date(apiDate+"T12:00:00Z");dt.setUTCDate(dt.getUTCDate()-1);
+      var prevDate=dt.toISOString().substring(0,10);
       var apiGroup=m.group.replace("GROUP_","");
-      var candidates=S.filter(function(s){return s.d===apiDate&&s.g===apiGroup;});
+      var candidates=S.filter(function(s){return (s.d===apiDate||s.d===prevDate)&&s.g===apiGroup;});
       if(candidates.length===1)ourMatch=candidates[0];
+      else if(candidates.length>1&&(ht||at)){
+        // disambiguate by either team name if we have one
+        var byTeam=candidates.filter(function(s){return s.h===ht||s.a===at||s.h===at||s.a===ht;});
+        if(byTeam.length===1)ourMatch=byTeam[0];
+      }
     }
 
     if(!ourMatch&&m.id){
