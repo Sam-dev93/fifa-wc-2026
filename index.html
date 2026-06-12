@@ -500,6 +500,10 @@ function mc(m){
 // TABS
 // ════════════════════════════════════════════
 var tabs=["Today","Table","Matches","Knockout","Forecast","Venues","Countries"];
+// Hide tabs here without deleting anything — remove a name from this
+// list to bring the tab back (e.g. set to [] to show all tabs again).
+var HIDDEN_TABS=["Knockout"];
+tabs=tabs.filter(function(t){return HIDDEN_TABS.indexOf(t)===-1;});
 var tabIds=["overview","groups","matches","knockout","forecast","venues","tracker"];
 var navEl=document.getElementById("nav");
 var pagesEl=document.getElementById("pages");
@@ -714,24 +718,8 @@ function rM(fg){
   var gs=["ALL","A","B","C","D","E","F","G","H","I","J","K","L","R32","R16","QF","SF","FINAL"];
   var fh='<div class="fr">';for(var i=0;i<gs.length;i++){fh+='<button class="fp'+((fg||"ALL")===gs[i]?" a":"")+'" data-fg="'+gs[i]+'">'+(gs[i]==="ALL"?"All":gs[i])+'</button>';}fh+='</div>';
 
-  // Live & Today section
-  var today=new Date().toISOString().split("T")[0];
-  var liveNow=ms.filter(function(m){var sc=liveData.scores?liveData.scores[m.m]:null;return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
-  var todayMs=ms.filter(function(m){return m.d===today;});
+  // (Today/Live section removed — the dedicated Today tab covers it)
   var topSection="";
-  if(liveNow.length>0){
-    topSection+='<div class="st" style="color:var(--green)">\ud83d\udfe2 LIVE NOW</div>';
-    for(var i=0;i<liveNow.length;i++)topSection+=mc(liveNow[i]);
-  }
-  if(todayMs.length>0&&(fg==="ALL"||!fg)){
-    var todayUpcoming=todayMs.filter(function(m){var sc=liveData.scores?liveData.scores[m.m]:null;return !sc||sc.status==="SCHEDULED"||sc.status==="TIMED";});
-    if(todayUpcoming.length>0){
-      topSection+='<div class="st">\ud83d\udfe1 TODAY</div>';
-      for(var i=0;i<todayUpcoming.length;i++)topSection+=mc(todayUpcoming[i]);
-    }
-  }
-  if(topSection)topSection+='<div style="height:1px;background:var(--w4);opacity:.15;margin:20px 0"></div>';
-
   var mh="";var days=Object.keys(byD);
   for(var i=0;i<days.length;i++){
     mh+='<div class="dh">'+fD(days[i])+'</div>';
