@@ -499,15 +499,25 @@ function mc(m){
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
-var tabs=["Today","Table","Matches","Knockout","Forecast","Venues","Countries"];
+// Tab name + page id stay paired, so hiding a tab can never shift
+// the others onto the wrong page.
+var TAB_DEFS=[
+  {name:"Today",id:"overview"},
+  {name:"Table",id:"groups"},
+  {name:"Matches",id:"matches"},
+  {name:"Knockout",id:"knockout"},
+  {name:"Forecast",id:"forecast"},
+  {name:"Venues",id:"venues"},
+  {name:"Countries",id:"tracker"}
+];
 // Hide tabs here without deleting anything — remove a name from this
 // list to bring the tab back (e.g. set to [] to show all tabs again).
 var HIDDEN_TABS=["Knockout"];
-tabs=tabs.filter(function(t){return HIDDEN_TABS.indexOf(t)===-1;});
-var tabIds=["overview","groups","matches","knockout","forecast","venues","tracker"];
+var visTabs=TAB_DEFS.filter(function(t){return HIDDEN_TABS.indexOf(t.name)===-1;});
+var tabIds=TAB_DEFS.map(function(t){return t.id;});
 var navEl=document.getElementById("nav");
 var pagesEl=document.getElementById("pages");
-var nh="";for(var i=0;i<tabs.length;i++){nh+='<button class="tab'+(i===0?" a":"")+'" data-p="'+tabIds[i]+'">'+tabs[i]+'</button>';}
+var nh="";for(var i=0;i<visTabs.length;i++){nh+='<button class="tab'+(i===0?" a":"")+'" data-p="'+visTabs[i].id+'">'+visTabs[i].name+'</button>';}
 navEl.innerHTML=nh;
 var ph="";for(var i=0;i<tabIds.length;i++){ph+='<div id="p-'+tabIds[i]+'" class="pg'+(i===0?" a":"")+'"></div>';}
 pagesEl.innerHTML=ph;
@@ -545,7 +555,10 @@ var liveData={};try{liveData=JSON.parse(localStorage.getItem("wc26_live")||"{}")
 function rO(){
   var LD=(typeof liveData==="undefined"||!liveData)?{}:liveData;
   var today=new Date().toISOString().split("T")[0];
+  var tmrD=new Date();tmrD.setDate(tmrD.getDate()+1);
+  var tomorrow=tmrD.toISOString().split("T")[0];
   var todayMs=S.filter(function(m){return m.d===today;});
+  var tomorrowMs=S.filter(function(m){return m.d===tomorrow;});
   function getSc(m){return LD.scores?LD.scores[m.m]:null;}
   var live=todayMs.filter(function(m){var sc=getSc(m);return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
   var fin=todayMs.filter(function(m){var sc=getSc(m);return sc&&sc.status==="FINISHED";});
@@ -553,7 +566,7 @@ function rO(){
   var dateStr=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
   var h='<div style="text-align:center;padding:14px 0 4px"><div style="font-size:18px;font-weight:800;color:var(--w)">'+dateStr+'</div>'
     +'<div style="font-size:11px;color:var(--w4);margin-top:2px">'+(todayMs.length?todayMs.length+' match'+(todayMs.length===1?'':'es')+' today \u00b7 scores update automatically':'')+'</div></div>';
-  if(!todayMs.length){
+  if(!todayMs.length&&!tomorrowMs.length){
     var future=S.filter(function(m){return m.d>today;}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
     if(future.length){
       var nd=future[0].d;
@@ -568,6 +581,12 @@ function rO(){
     if(live.length){h+='<div class="st">\ud83d\udfe2 Live Now</div>';for(var i=0;i<live.length;i++)h+=mc(live[i]);}
     if(up.length){h+='<div class="st">\ud83d\udfe1 Upcoming Today</div>';for(var i=0;i<up.length;i++)h+=mc(up[i]);}
     if(fin.length){h+='<div class="st">\u2705 Finished</div>';for(var i=0;i<fin.length;i++)h+=mc(fin[i]);}
+    if(tomorrowMs.length){
+      var tmrStr=tmrD.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+      h+='<div style="height:1px;background:var(--w4);opacity:.15;margin:20px 0"></div>';
+      h+='<div class="st">\ud83d\udcc5 Tomorrow \u2014 '+tmrStr+'</div>';
+      for(var i=0;i<tomorrowMs.length;i++)h+=mc(tomorrowMs[i]);
+    }
   }
   document.getElementById("p-overview").innerHTML=h;
 }
