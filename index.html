@@ -552,13 +552,28 @@ var activeTab="overview";
 // the API section lower down re-loads the same cache, harmlessly.
 var liveData={};try{liveData=JSON.parse(localStorage.getItem("wc26_live")||"{}");}catch(e){liveData={};}
 
+// Sort key for a match's kickoff. The only time stored per match is the
+// .et display string (e.g. "8:00 PM CST / 3:00 AM UK +1"); we read the UK
+// portion after the "/" — it's always present, and UK is ahead of every
+// host timezone, so it orders every kickoff on a given day correctly.
+// "+1" means the UK clock has rolled past midnight (later kickoff).
+function koMins(m){
+  var x=(m.et||"").match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*UK(\s*\+1)?/i);
+  if(!x)return m.m;                       // fallback: match number
+  var hr=parseInt(x[1],10)%12;if(/PM/i.test(x[3]))hr+=12;
+  var mins=hr*60+parseInt(x[2],10);
+  if(x[4])mins+=1440;                      // next UK day
+  return mins;
+}
+function byKickoff(a,b){return koMins(a)-koMins(b)||a.m-b.m;}
+
 function rO(){
   var LD=(typeof liveData==="undefined"||!liveData)?{}:liveData;
   var today=new Date().toISOString().split("T")[0];
   var tmrD=new Date();tmrD.setDate(tmrD.getDate()+1);
   var tomorrow=tmrD.toISOString().split("T")[0];
-  var todayMs=S.filter(function(m){return m.d===today;});
-  var tomorrowMs=S.filter(function(m){return m.d===tomorrow;});
+  var todayMs=S.filter(function(m){return m.d===today;}).sort(byKickoff);
+  var tomorrowMs=S.filter(function(m){return m.d===tomorrow;}).sort(byKickoff);
   function getSc(m){return LD.scores?LD.scores[m.m]:null;}
   var live=todayMs.filter(function(m){var sc=getSc(m);return sc&&(sc.status==="IN_PLAY"||sc.status==="PAUSED");});
   var fin=todayMs.filter(function(m){var sc=getSc(m);return sc&&sc.status==="FINISHED";});
@@ -570,7 +585,7 @@ function rO(){
     var future=S.filter(function(m){return m.d>today;}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
     if(future.length){
       var nd=future[0].d;
-      var next=future.filter(function(m){return m.d===nd;});
+      var next=future.filter(function(m){return m.d===nd;}).sort(byKickoff);
       var ndStr=new Date(nd+"T12:00:00Z").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
       h+='<div class="st">No matches today \u2014 next up: '+ndStr+'</div>';
       for(var i=0;i<next.length;i++)h+=mc(next[i]);
@@ -1095,37 +1110,36 @@ function showAPISettings(){
 }
 
 // ── API Fetch ──
+// Polls football-data.org for live scores. Two key speed levers:
+//   1. minGap throttle drops to 20s while any match is in-play.
+//   2. No pre-flight /competitions call — we go straight to /matches,
+//      saving a full round-trip and an API request every cycle.
 function fetchLive(manual){
   if(!API_KEY)return;
   var now=Date.now();
-  if(!manual && now-lastFetch<60000)return;
+  // 20s refresh while games are live, 60s otherwise. Manual always passes.
+  var minGap=(liveData.live>0?20000:60000);
+  if(!manual && now-lastFetch<minGap)return;
 
-  // First test connection with competition info
-  fetch(API_BASE+"/competitions/"+WC_CODE,{
+  // Stamp the fetch time up front so the throttle/UI reflect this attempt.
+  lastFetch=Date.now();
+  localStorage.setItem("wc26_lastFetch",""+lastFetch);
+  if(window._updateLiveBtn)window._updateLiveBtn();
+
+  // Go straight to matches — no redundant connection pre-flight.
+  fetch(API_BASE+"/competitions/"+WC_CODE+"/matches",{
     headers:{"X-Auth-Token":API_KEY}
   }).then(function(r){
-    if(!r.ok)throw new Error("API "+r.status+" - check your API key");
-    return r.json();
-  }).then(function(compData){
-    // Connection works - now fetch matches
-    lastFetch=Date.now();
-    localStorage.setItem("wc26_lastFetch",""+lastFetch);
-    if(window._updateLiveBtn)window._updateLiveBtn();
-
-    return fetch(API_BASE+"/competitions/"+WC_CODE+"/matches",{
-      headers:{"X-Auth-Token":API_KEY}
-    });
-  }).then(function(r){
     if(r.status===429){
-      // Rate limited - just keep existing data, try again next cycle
+      // Rate limited - keep existing data, retry next cycle.
       lastFetch=Date.now();
       localStorage.setItem("wc26_lastFetch",""+lastFetch);
       if(window._updateLiveBtn)window._updateLiveBtn();
       if(document.getElementById("apiStatus"))
-        document.getElementById("apiStatus").innerHTML='<span style="color:var(--orange)">⏳ Rate limited - will retry in 60s</span>';
+        document.getElementById("apiStatus").innerHTML='<span style="color:var(--orange)">⏳ Rate limited - will retry shortly</span>';
       return Promise.reject("skip");
     }
-    if(!r.ok)throw new Error("Matches: "+r.status);
+    if(!r.ok)throw new Error("Matches: "+r.status+(r.status===403?" - check API key":""));
     return r.json();
   }).then(function(data){
     processMatches(data);
@@ -1133,7 +1147,7 @@ function fetchLive(manual){
     applyLiveData();
     if(window._updateLiveBtn)window._updateLiveBtn();
     if(document.getElementById("apiStatus"))
-      document.getElementById("apiStatus").innerHTML='<span style="color:var(--green)">✅ Connected! '+data.resultSet.count+' matches loaded</span>';
+      document.getElementById("apiStatus").innerHTML='<span style="color:var(--green)">✅ Connected! '+(data.resultSet?data.resultSet.count:(data.matches?data.matches.length:0))+' matches loaded</span>';
     scheduleLivePoll();
   }).catch(function(e){
     if(e==="skip")return;
@@ -1141,10 +1155,10 @@ function fetchLive(manual){
     liveData._lastError=e.message||e;
     if(window._updateLiveBtn)window._updateLiveBtn();
     if(document.getElementById("apiStatus"))
-      document.getElementById("apiStatus").innerHTML='<span style="color:var(--red)">❌ '+e.message+'</span>';
+      document.getElementById("apiStatus").innerHTML='<span style="color:var(--red)">❌ '+(e.message||e)+'</span>';
   });
 
-  // Also fetch standings if tournament has started
+  // Also fetch standings (parallel, fire-and-forget).
   fetch(API_BASE+"/competitions/"+WC_CODE+"/standings",{
     headers:{"X-Auth-Token":API_KEY}
   }).then(function(r){return r.ok?r.json():null;})
@@ -1333,6 +1347,10 @@ function applyLiveData(){
 }
 
 // ── Smart polling ──
+// The interval itself is data-driven: 20s while any match is live, 60s
+// otherwise. scheduleLivePoll() re-runs after every successful fetch, so
+// the cadence speeds up the moment a game kicks off and relaxes when none
+// are in play — no manual restart needed.
 function scheduleLivePoll(){
   if(liveTimer)clearInterval(liveTimer);
   if(!API_KEY)return;
@@ -1343,8 +1361,9 @@ function scheduleLivePoll(){
   var end=new Date("2026-07-20T00:00:00Z");
 
   if(now>=start&&now<=end){
-    // During tournament: poll every 60s
-    liveTimer=setInterval(function(){fetchLive(false);},60000);
+    // During tournament: 20s while live, 60s when idle.
+    var iv=(liveData.live>0?20000:60000);
+    liveTimer=setInterval(function(){fetchLive(false);},iv);
   } else if(now<start){
     // Before tournament: check every hour for playoff confirmations
     liveTimer=setInterval(function(){fetchLive(false);},3600000);
